@@ -9,6 +9,11 @@ model: sonnet
 
 # Vulnetix Remediation Plan Skill
 
+## Capabilities awareness
+
+Before deciding which integrations to compose, read `.vulnetix/capabilities.yaml`. The `derived.primary_package_manager` field selects manifest/lockfile parsing; `derived.detection_stack` filters which rule families (snort/yara/nuclei/semgrep) to fetch; `derived.sbom_stack` decides whether to compose with syft/grype/trivy; `derived.soar` decides STIX export. The session-start hook keeps this file fresh; if it is missing, run `${CLAUDE_PLUGIN_ROOT}/hooks/capabilities-detect.sh` before proceeding.
+
+
 This skill generates a comprehensive, context-aware remediation plan for a specific vulnerability using the VDB V2 remediation API. It auto-detects your repository's ecosystem, package manager, installed versions, container images, and OS to provide targeted fix guidance including registry upgrades, source patches, distribution advisories, workarounds, CWE-specific remediation strategies, and verification commands.
 
 **How this differs from `/vulnetix:fix`:** The existing `/vulnetix:fix` skill fetches V1 fix data and proposes manual manifest edits. This skill uses the V2 `remediation plan` endpoint which provides **context-aware** guidance (ecosystem, version, OS, container), **CWE remediation strategies**, **CrowdSec threat intelligence** (live exploitation data), **workaround effectiveness scoring**, **SSVC decision support**, and **verification commands** per package manager.

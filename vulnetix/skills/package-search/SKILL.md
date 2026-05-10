@@ -9,6 +9,11 @@ model: sonnet
 
 # Vulnetix Package Search Skill
 
+## Capabilities awareness
+
+Before deciding which integrations to compose, read `.vulnetix/capabilities.yaml`. The `derived.primary_package_manager` field selects manifest/lockfile parsing; `derived.detection_stack` filters which rule families (snort/yara/nuclei/semgrep) to fetch; `derived.sbom_stack` decides whether to compose with syft/grype/trivy; `derived.soar` decides STIX export. The session-start hook keeps this file fresh; if it is missing, run `${CLAUDE_PLUGIN_ROOT}/hooks/capabilities-detect.sh` before proceeding.
+
+
 This skill searches for packages across ecosystems and provides a comprehensive security risk assessment before adding them as dependencies.
 
 ## Output & Analysis Guidelines

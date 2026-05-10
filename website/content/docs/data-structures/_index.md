@@ -10,10 +10,22 @@ The Vulnetix Claude Code Plugin stores all local state in a `.vulnetix/` directo
 
 ```
 .vulnetix/
+  capabilities.yaml    # System binaries + repo signals (refreshed every 24h)
   memory.yaml          # Vulnerability state and tracking
   scans/               # Package search results and CycloneDX SBOM files
     *.packages.json    # Pre-commit package search results
     *.cdx.json         # Post-install CycloneDX SBOMs
+  detection/           # Snort/YARA/Nuclei content fetched per CVE
+    <VULN_ID>/
+      snort.rules
+      vuln.yar
+      nuclei.yaml
+  iocs/                # STIX 2.1 bundles for SOAR/SIEM ingestion
+  vex/                 # OpenVEX / CycloneDX VEX statements
+  compliance/          # Bundled SBOM+SPDX+SARIF+VEX for audit
+  review/              # PR security review artifacts
+  sboms/               # SBOM-only generation outputs
+  upgrade/             # Dep-upgrade orchestrator queue + state
   pocs/                # Exploit proof-of-concept source cache
     <VULN_ID>/
       ...
@@ -32,6 +44,7 @@ The Vulnetix Claude Code Plugin stores all local state in a `.vulnetix/` directo
 ## Contents
 
 {{< cards >}}
+  {{< card link="capabilities-yaml" title="capabilities.yaml" subtitle="System binaries + repo signals (read by every Pix surface)." >}}
   {{< card link="memory-yaml" title="memory.yaml" subtitle="Vulnerability tracking state, decisions, and history." >}}
   {{< card link="sboms" title="Scan Results" subtitle="Package search results and CycloneDX v1.7 SBOM files." >}}
   {{< card link="pocs" title="PoC Source Cache" subtitle="Cached exploit proof-of-concept source files." >}}

@@ -9,6 +9,11 @@ model: sonnet
 
 # Vulnetix Vulnerability Lookup Skill
 
+## Capabilities awareness
+
+Before deciding which integrations to compose, read `.vulnetix/capabilities.yaml`. The `derived.primary_package_manager` field selects manifest/lockfile parsing; `derived.detection_stack` filters which rule families (snort/yara/nuclei/semgrep) to fetch; `derived.sbom_stack` decides whether to compose with syft/grype/trivy; `derived.soar` decides STIX export. The session-start hook keeps this file fresh; if it is missing, run `${CLAUDE_PLUGIN_ROOT}/hooks/capabilities-detect.sh` before proceeding.
+
+
 This skill serves two purposes based on the argument provided:
 
 - **Vuln ID argument** (CVE-*, GHSA-*, PYSEC-*, etc.) --> retrieves detailed vulnerability intelligence and assesses its impact against the current repository
