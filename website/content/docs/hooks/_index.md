@@ -1,21 +1,29 @@
 ---
 title: Hooks
 weight: 3
-description: Six event-driven hooks that scan, track, and surface vulnerability intelligence automatically during your Claude Code workflow.
+description: Event-driven hooks that scan, track, and surface vulnerability intelligence automatically. Includes capability detection, dependency-add gating, container/IaC pre-checks, and prompt routing.
 ---
 
-The Vulnetix plugin registers six hooks with Claude Code. Each hook fires on a specific event, performs lightweight analysis, and injects an informational `systemMessage` back into the conversation. Hooks never block operations -- they always exit 0.
+The Vulnetix plugin registers a set of hooks with Claude Code (and equivalents for Augment, CodeBuddy, Codex, Copilot, Cortex, Cursor, Gemini, iFlow, Kiro, OpenHands, Qoder, Qwen, Windsurf, Amazon Q). Each hook fires on a specific event, performs lightweight analysis, and injects an informational `systemMessage` back into the conversation. Hooks never block operations -- they always exit 0.
 
 ## Hook overview
 
 | Hook | Event | Matcher | Timeout | Purpose |
 |------|-------|---------|---------|---------|
-| [Pre-Commit Scan](pre-commit-scan) | PreToolUse | Bash | 30s | Extracts packages from staged manifests and runs background VDB searches |
-| [Post-Install Scan](post-install-scan) | PostToolUse | Bash | 120s | Scans after dependency install commands |
-| [Manifest Edit Gate](manifest-edit-scan) | PreToolUse | Edit\|Write | 30s | Checks packages being added/modified for risk |
+| [Capabilities Detect](capabilities-detect) | SessionStart | -- | 15s | Probes binaries + repo signals; writes `.vulnetix/capabilities.yaml` |
 | [Session Summary](session-summary) | SessionStart | -- | 10s | Displays vulnerability dashboard on session start |
+| [Pre-Commit Scan](pre-commit-scan) | PreToolUse | Bash | 30s | Extracts packages from staged manifests and runs background VDB searches |
+| [Dep Install Gate](dep-install-gate) | PreToolUse | Bash | 20s | Quick vuln/malware check before npm/pip/cargo/etc. install |
+| [Docker Build Gate](docker-build-gate) | PreToolUse | Bash | 30s | Quick container scan before docker/podman build |
+| [Terraform Apply Gate](terraform-apply-gate) | PreToolUse | Bash | 30s | Quick IaC scan before terraform/tofu apply |
+| [Git Push Gate](git-push-gate) | PreToolUse | Bash | 30s | Pre-push secret-scan + open-finding summary |
+| [Manifest Edit Gate](manifest-edit-scan) | PreToolUse | Edit\|Write | 30s | Checks packages being added/modified for risk |
+| [Post-Install Scan](post-install-scan) | PostToolUse | Bash | 120s | Scans after dependency install commands |
+| [Dockerfile Edit Gate](dockerfile-edit-gate) | PostToolUse | Edit\|Write | 10s | Background container scan after Dockerfile edits |
+| [IaC Edit Gate](iac-edit-gate) | PostToolUse | Edit\|Write | 10s | Background IaC scan after `*.tf`/`*.tofu` edits |
 | [Stop Reminder](stop-reminder) | Stop | -- | 10s | Reminds about unresolved vulnerabilities |
 | [Context Inject](vuln-context-inject) | UserPromptSubmit | -- | 15s | Auto-detects CVE/GHSA IDs in messages |
+| [Prompt Router](prompt-router) | UserPromptSubmit | -- | 10s | Routes security-relevant prompts to the matching skill |
 
 ## Key principles
 

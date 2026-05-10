@@ -3,11 +3,29 @@
     "pre_run_command": [
       {
         "command": "bash ./hooks/pre-commit-scan.sh"
+      },
+      {
+        "command": "bash ./hooks/dep-install-gate.sh"
+      },
+      {
+        "command": "bash ./hooks/docker-build-gate.sh"
+      },
+      {
+        "command": "bash ./hooks/terraform-apply-gate.sh"
+      },
+      {
+        "command": "bash ./hooks/git-push-gate.sh"
       }
     ],
     "pre_write_code": [
       {
         "command": "bash ./hooks/manifest-edit-scan.sh"
+      },
+      {
+        "command": "bash ./hooks/dockerfile-edit-gate.sh"
+      },
+      {
+        "command": "bash ./hooks/iac-edit-gate.sh"
       }
     ],
     "post_run_command": [
@@ -23,6 +41,14 @@
     "pre_user_prompt": [
       {
         "command": "bash ./hooks/vuln-context-inject.sh"
+      },
+      {
+        "command": "bash ./hooks/prompt-router.sh"
+      }
+    ],
+    "session_start": [
+      {
+        "command": "bash ./hooks/capabilities-detect.sh --announce"
       }
     ]
   }

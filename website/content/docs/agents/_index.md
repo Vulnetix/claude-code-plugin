@@ -13,6 +13,12 @@ Unlike [commands](/docs/commands) (which are single CLI calls) or [skills](/docs
 | Agent | Effort | Max Turns | Purpose |
 |-------|--------|-----------|---------|
 | [Bulk Triage](bulk-triage) | Medium | 15 | Triage multiple vulnerabilities in parallel, prioritize by CWSS score, and produce a consolidated security report |
+| [Dep Upgrade Orchestrator](dep-upgrade-orchestrator) | High | 25 | End-to-end dependency upgrade with verification + dep-resolve loop |
+| [Incident Responder](incident-responder) | High | 20 | SOC playbook for an actively exploited CVE |
+| [PR Security Reviewer](pr-security-reviewer) | Medium | 18 | Comprehensive pre-merge SAST + SCA + secrets + container + IaC review |
+| [Compliance Bundler](compliance-bundler) | Medium | 12 | Build SBOM + SPDX + SARIF + VEX bundle, optional sign + upload |
+| [Safe Harbor Resolver](safe-harbor-resolver) | High | 18 | Resolve dep-version conflicts blocking a fix; tries override → inline → workaround |
+| [Secure Code Coach](secure-code-coach) | Medium | 20 | Long-running coach for a feature branch with proactive SAST/secret/secure-code reminders |
 
 ## How Agents Work
 

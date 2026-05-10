@@ -1,7 +1,7 @@
 {
   "name": "vulnetix",
-  "version": "1.2.2",
-  "description": "Vulnerability intelligence for Claude Code — scans dependencies on commit, searches packages for risk data, analyzes exploits, and proposes fixes via the Vulnetix VDB API.",
+  "version": "1.3.0",
+  "description": "Capability-aware vulnerability intelligence for Claude Code — SOC + SecDev workflows over the full Vulnetix CLI surface (scan/sast/sca/secrets/containers/iac/license/triage/VDB). Detects callable tools and repo signals at session start so skills/hooks/commands/agents only invoke meaningful integrations.",
   "author": {
     "name": "Vulnetix",
     "url": "https://vulnetix.com"

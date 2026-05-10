@@ -8,15 +8,42 @@
       {
         "matcher": "fs_write",
         "command": "bash ./hooks/manifest-edit-scan.sh"
+      },
+      {
+        "matcher": "execute_bash",
+        "command": "bash ./hooks/dep-install-gate.sh"
+      },
+      {
+        "matcher": "execute_bash",
+        "command": "bash ./hooks/docker-build-gate.sh"
+      },
+      {
+        "matcher": "execute_bash",
+        "command": "bash ./hooks/terraform-apply-gate.sh"
+      },
+      {
+        "matcher": "execute_bash",
+        "command": "bash ./hooks/git-push-gate.sh"
       }
     ],
     "postToolUse": [
       {
         "matcher": "execute_bash",
         "command": "bash ./hooks/post-install-scan.sh"
+      },
+      {
+        "matcher": "fs_write",
+        "command": "bash ./hooks/dockerfile-edit-gate.sh"
+      },
+      {
+        "matcher": "fs_write",
+        "command": "bash ./hooks/iac-edit-gate.sh"
       }
     ],
     "agentSpawn": [
+      {
+        "command": "bash ./hooks/capabilities-detect.sh --announce"
+      },
       {
         "command": "bash ./hooks/session-summary.sh"
       }
@@ -29,6 +56,9 @@
     "userPromptSubmit": [
       {
         "command": "bash ./hooks/vuln-context-inject.sh"
+      },
+      {
+        "command": "bash ./hooks/prompt-router.sh"
       }
     ]
   }
