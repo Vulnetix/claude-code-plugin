@@ -4,17 +4,29 @@
 # Subcommand: `attack-techniques get <id>` (NOT bare `attack-techniques <id>`).
 # Output-flag quirk: `-o json` writes to file `json`; use `-o /dev/stdout`.
 #
-# Verified against: CVE-2021-44228 (2.6 KB raw → ~0.2 KB filtered).
-# Top-level keys: _links, aliases, attackTechniques (often empty for older CVEs),
-# count, identifier, state, timestamp, title, total.
+# Verified against: CVE-2021-44228 — note `attackTechniques: []` was empty for
+# this fixture, but the filter is shaped for the populated case as well. Top-level
+# keys: _links, aliases, attackTechniques, count, identifier, state, timestamp,
+# title, total.
+#
+# Per-technique fields (when populated): id, name, tactic, subtechniques,
+# inWildCount, mitigations, detections, references — keep all of them; ATT&CK
+# data is the canonical defensive guidance.
 
 {
   id: .identifier,
+  title: (.title // null),
   total: .total,
+  count: .count,
   techniques: ([(.attackTechniques // [])[] | {
     id: (.id // .techniqueId),
     name: (.name // null),
     tactic: (.tactic // null),
-    inWildCount: (.inWildCount // null)
+    subtechniques: (.subtechniques // []),
+    inWildCount: (.inWildCount // null),
+    mitigations: (.mitigations // []),
+    detections: (.detections // []),
+    description: (.description // null),
+    references: (.references // [])
   }])
 }

@@ -1,17 +1,30 @@
 # cwe.jq — extract Pix-relevant fields from `vulnetix vdb cwe <id> -V v2 -o json`.
 #
 # **Verification status: PARTIAL.** Inferred from MITRE-style CWE response.
+# Retains all mitigations and consequences (these are the canonical defensive
+# guidance) without truncation; caps examples at 10.
 
 {
   cweId: (.cweId // .id),
   name: (.name // null),
-  mitigations: ([(.mitigations // [])[0:5][] | {
+  description: (.description // null),
+  abstraction: (.abstraction // null),
+  status: (.status // null),
+  mitigations: ([(.mitigations // [])[] | {
     strategy: (.strategy // null),
-    description: ((.description // "") | if length > 150 then .[:147] + "..." else . end)
+    description: (.description // null),
+    phase: (.phase // null),
+    effectiveness: (.effectiveness // null)
   }]),
-  consequences: ([(.consequences // [])[] | {scope: (.scope // null), impact: (.impact // null)}]),
-  topExamples: ([(.examples // [])[0:3][] | {
+  consequences: ([(.consequences // [])[] | {
+    scope: (.scope // null),
+    impact: (.impact // null),
+    note: (.note // null)
+  }]),
+  detectionMethods: (.detectionMethods // []),
+  examples: ([(.examples // [])[0:10][] | {
     cveId: (.cveId // .id),
-    description: ((.description // "") | if length > 100 then .[:97] + "..." else . end)
-  }])
+    description: (.description // null)
+  }]),
+  relatedAttackPatterns: (.relatedAttackPatterns // [])
 }

@@ -8,17 +8,20 @@ Pix v1.4.0 introduces a small library of `jq` filters at [`vulnetix/skills/_lib/
 
 ## Why
 
-A single `vulnetix vdb vuln CVE-2021-44228 -o json` call returns ~4 MB (an array of 20 container views in CVE5 format). `vulnetix vdb exploits CVE-2021-44228 -o json` returns ~12 MB (an array of 10,000+ exploit records). Feeding either raw to the LLM blows the context budget. Filtered:
+A single `vulnetix vdb vuln CVE-2021-44228 -o json` call returns ~4 MB (an array of 20 container views in CVE5 format). `vulnetix vdb exploits CVE-2021-44228 -o json` returns ~12 MB (an array of 10,000+ exploit records). Feeding either raw to the LLM blows the context budget. Filtered (sized for **decision retention** — keeps full Vulnetix enrichment, full affected lists, full KEV directives, recommendedVersions, etc., not just headlines):
 
 | Endpoint | Raw | Filtered | Reduction |
 |---|---|---|---|
-| `vdb vuln` | 4.0 MB | 5 KB | 99.87% |
-| `vdb exploits` | 12 MB | 2 KB | 99.99% |
-| `vdb fixes` | 87 KB | 2 KB | 97.5% |
-| `vdb sightings` | 294 KB | 0.7 KB | 99.8% |
-| `vdb iocs get` | 70 KB | 2.4 KB | 96.5% |
-| `vdb attack-techniques get` | 2.6 KB | 0.06 KB | 98% |
-| `vdb packages search` | 7 KB | 1.2 KB | 78% |
+| `vdb vuln` | 4.0 MB | 224 KB | 94.5% |
+| `vdb exploits` | 12 MB | 17 KB | 99.9% |
+| `vdb fixes` | 87 KB | 14 KB | 84% |
+| `vdb sightings` | 294 KB | 4 KB | 98.6% |
+| `vdb iocs get` | 70 KB | 13 KB | 81% |
+| `vdb packages search` | 7 KB | 4 KB | 46% |
+| `vdb versions` | 8 KB | 6 KB | 29% |
+| `vdb kev list` | 1 KB | 1 KB | (already lean) |
+
+The `vdb vuln` filter aggregates `cna.affected[]` across all 20 container views (each container scopes a different ecosystem — Amazon Linux entries in one, npm/maven log4j-core in another, etc.); for log4j the aggregated affected list is 639 entries, capped at the first 200 with the total surfaced as `affectedTotal` so the LLM can call `vdb affected` for the rest if needed.
 
 ## Library layout
 
