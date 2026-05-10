@@ -5,9 +5,23 @@ argument-hint: "[<file-path>] | [<topic: auth|crypto|sql|xss|deser>]"
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep
 model: sonnet
+triggers:
+  - "secure coding"
+  - "auth code"
+  - "crypto code"
+  - "sql injection"
+  - "secure write"
+chain:
+  - sast-scan
+outputBudget: medium
+cooldown: per-session
 ---
 
 # Vulnetix Secure Code Write Skill
+
+## Conventions
+
+This skill follows [`_lib/contract.md`](../_lib/contract.md): the Vulnetix CLI is auto-installed by hooks, `.vulnetix/capabilities.yaml` is always present, every `vulnetix vdb` call is piped through a verified `jq` filter from [`_lib/jq/`](../_lib/jq/), independent calls run in parallel as concurrent Bash tool calls, and trailing follow-ups are limited to one line. See the contract for output style, memory write rules, and cooldowns.
 
 A coach, not a scanner. Use this when about to author auth, crypto, SQL, deserialization, file-handling, or templating code — surfaces the rules a reviewer would check, before you write the buggy version.
 
@@ -26,7 +40,7 @@ vulnetix scan --list-default-rules -o json | jq '[.rules[] | select(.tags | cont
 Plus CWE intel:
 
 ```bash
-vulnetix vdb cwe list --keyword "$TOPIC" -V v2 -o json
+vulnetix vdb cwe list --keyword "$TOPIC" -V v2 -o json | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/cwe.jq"
 ```
 
 ## Step 3: Render coach

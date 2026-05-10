@@ -3,11 +3,25 @@ name: eol-check
 description: Flag end-of-life runtimes and packages in the repo. Surfaces EOL Node, Python, Java, Go, .NET, base images, and key libraries.
 argument-hint: "[--strict]"
 user-invocable: true
-allowed-tools: Bash, Read, Glob, Grep, Edit, Write
+allowed-tools: Bash, Read, Glob, Grep
 model: sonnet
+triggers:
+  - "eol"
+  - "end of life"
+  - "outdated runtime"
+  - "unsupported version"
+chain:
+  - dep-resolve
+  - fix
+outputBudget: short
+cooldown: per-session
 ---
 
 # Vulnetix EOL Check Skill
+
+## Conventions
+
+This skill follows [`_lib/contract.md`](../_lib/contract.md): the Vulnetix CLI is auto-installed by hooks, `.vulnetix/capabilities.yaml` is always present, every `vulnetix vdb` call is piped through a verified `jq` filter from [`_lib/jq/`](../_lib/jq/), independent calls run in parallel as concurrent Bash tool calls, and trailing follow-ups are limited to one line. See the contract for output style, memory write rules, and cooldowns.
 
 ## Step 1: Load capabilities
 

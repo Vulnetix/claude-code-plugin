@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
+# Cooldown helpers — silent fallback if missing.
+COOLDOWN_LIB="$(dirname "$0")/_lib/cooldown.sh"
+if [[ -f "$COOLDOWN_LIB" ]]; then
+    # shellcheck disable=SC1090
+    source "$COOLDOWN_LIB"
+else
+    already_emitted() { return 1; }
+    record_emission() { :; }
+fi
+
 # PostToolUse Edit/Write — quick container scan after editing Dockerfile / Containerfile.
 # Never blocks.
 
@@ -13,6 +23,10 @@ BN=$(basename "$FILE")
 if [[ "$BN" != "Dockerfile" ]] && [[ "$BN" != "Containerfile" ]] && [[ ! "$BN" =~ \.dockerfile$ ]]; then
     exit 0
 fi
+
+# v1.4.0 cooldown: don't re-scan the same Dockerfile within a session.
+if already_emitted "edit-gate:$FILE"; then exit 0; fi
+record_emission "edit-gate:$FILE"
 
 source "$(dirname "$0")/ensure-vulnetix-cli.sh"
 ensure_vulnetix_cli || exit 0

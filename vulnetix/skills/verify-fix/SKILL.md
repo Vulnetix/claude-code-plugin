@@ -5,9 +5,22 @@ argument-hint: <vuln-id>
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
 model: sonnet
+triggers:
+  - "verify fix"
+  - "confirm fix"
+  - "fix worked"
+  - "exploit gone"
+chain:
+  - vex-publish
+outputBudget: short
+cooldown: per-session
 ---
 
 # Vulnetix Fix Verification Skill
+
+## Conventions
+
+This skill follows [`_lib/contract.md`](../_lib/contract.md): the Vulnetix CLI is auto-installed by hooks, `.vulnetix/capabilities.yaml` is always present, every `vulnetix vdb` call is piped through a verified `jq` filter from [`_lib/jq/`](../_lib/jq/), independent calls run in parallel as concurrent Bash tool calls, and trailing follow-ups are limited to one line. See the contract for output style, memory write rules, and cooldowns.
 
 Run after `/vulnetix:fix` (or any manual remediation) to confirm the vulnerability is gone and no regressions appeared.
 
@@ -39,8 +52,8 @@ Capture exit code. Non-zero means a critical/high vuln with weaponized exploit s
 ## Step 4: Targeted recheck of the specific CVE
 
 ```bash
-vulnetix vdb fixes "$ARGUMENTS" -o json
-vulnetix vdb vuln "$ARGUMENTS" -o json
+vulnetix vdb fixes "$ARGUMENTS" -o json | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/fixes.jq"
+vulnetix vdb vuln "$ARGUMENTS" -o json | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/vuln.jq"
 ```
 
 Cross-check: does the *new* installed version fall outside the affected range?

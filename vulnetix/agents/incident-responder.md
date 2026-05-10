@@ -5,6 +5,16 @@ effort: high
 maxTurns: 20
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
 model: sonnet
+triggers:
+  - "incident response"
+  - "cve in the wild"
+  - "actively exploited"
+chain:
+  - detection-rules
+  - verify-fix
+  - vex-publish
+outputBudget: long
+cooldown: per-session
 ---
 
 # Incident Responder Agent

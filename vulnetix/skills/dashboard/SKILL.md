@@ -2,15 +2,25 @@
 name: dashboard
 description: View all tracked vulnerabilities and their current status
 user-invocable: true
-allowed-tools: Read, Glob, Grep
+allowed-tools: Bash, Read, Glob, Grep
 model: haiku
+triggers:
+  - "dashboard"
+  - "status"
+  - "what vulns"
+  - "tracked vulnerabilities"
+chain:
+  - soc-triage
+  - vuln
+outputBudget: medium
+cooldown: per-session
 ---
 
 # Vulnetix Vulnerability Dashboard
 
-## Capabilities awareness
+## Conventions
 
-Before deciding which integrations to compose, read `.vulnetix/capabilities.yaml`. The `derived.primary_package_manager` field selects manifest/lockfile parsing; `derived.detection_stack` filters which rule families (snort/yara/nuclei/semgrep) to fetch; `derived.sbom_stack` decides whether to compose with syft/grype/trivy; `derived.soar` decides STIX export. The session-start hook keeps this file fresh; if it is missing, run `${CLAUDE_PLUGIN_ROOT}/hooks/capabilities-detect.sh` before proceeding.
+This skill follows [`_lib/contract.md`](../_lib/contract.md): the Vulnetix CLI is auto-installed by hooks, `.vulnetix/capabilities.yaml` is always present, every `vulnetix vdb` call is piped through a verified `jq` filter from [`_lib/jq/`](../_lib/jq/), independent calls run in parallel as concurrent Bash tool calls, and trailing follow-ups are limited to one line. See the contract for output style, memory write rules, and cooldowns.
 
 
 This skill reads `.vulnetix/memory.yaml` and displays a comprehensive vulnerability status report. It is read-only and does not modify any files.

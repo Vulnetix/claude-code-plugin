@@ -5,9 +5,25 @@ argument-hint: <package-name> [--target-version X]
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
 model: sonnet
+triggers:
+  - "version conflict"
+  - "cant upgrade"
+  - "peer dep"
+  - "resolve dependency"
+  - "upgrade blocked"
+chain:
+  - safe-version
+  - fix
+  - verify-fix
+outputBudget: medium
+cooldown: per-session
 ---
 
 # Vulnetix Dependency Resolution Skill
+
+## Conventions
+
+This skill follows [`_lib/contract.md`](../_lib/contract.md): the Vulnetix CLI is auto-installed by hooks, `.vulnetix/capabilities.yaml` is always present, every `vulnetix vdb` call is piped through a verified `jq` filter from [`_lib/jq/`](../_lib/jq/), independent calls run in parallel as concurrent Bash tool calls, and trailing follow-ups are limited to one line. See the contract for output style, memory write rules, and cooldowns.
 
 When `/vulnetix:fix` proposes a version bump but the lockfile resolution fails (peer-dep conflict, transitive constraint, etc.), use this skill to find a compatible set.
 
@@ -33,8 +49,8 @@ Pick the command for the detected package manager. Capture the dep tree paths.
 ## Step 3: Pull safe-version graph
 
 ```bash
-vulnetix vdb versions "$PACKAGE" -o json
-vulnetix vdb fixes "$PACKAGE" -o json
+vulnetix vdb versions "$PACKAGE" -o json | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/versions.jq"
+vulnetix vdb fixes "$PACKAGE" -o json | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/fixes.jq"
 ```
 
 For each candidate target version:

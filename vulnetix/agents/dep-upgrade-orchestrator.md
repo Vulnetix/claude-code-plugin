@@ -5,6 +5,16 @@ effort: high
 maxTurns: 25
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
 model: sonnet
+triggers:
+  - "upgrade dependencies"
+  - "upgrade everything"
+  - "modernize deps"
+chain:
+  - fix
+  - verify-fix
+  - dep-resolve
+outputBudget: long
+cooldown: per-session
 ---
 
 # Dependency Upgrade Orchestrator

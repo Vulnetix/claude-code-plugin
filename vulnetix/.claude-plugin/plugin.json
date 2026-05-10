@@ -1,7 +1,7 @@
 {
   "name": "vulnetix",
-  "version": "1.3.0",
-  "description": "Capability-aware vulnerability intelligence for Claude Code — SOC + SecDev workflows over the full Vulnetix CLI surface (scan/sast/sca/secrets/containers/iac/license/triage/VDB). Detects callable tools and repo signals at session start so skills/hooks/commands/agents only invoke meaningful integrations.",
+  "version": "1.4.0",
+  "description": "Capability-aware vulnerability intelligence for Claude Code — SOC + SecDev workflows over the full Vulnetix CLI surface. v1.4.0 adds a verified jq filter library (90-99.99% token reduction per VDB call), trigger/chain frontmatter for natural agent-harness discovery, per-session hook cooldowns, and a shared skill contract.",
   "author": {
     "name": "Vulnetix",
     "url": "https://vulnetix.com"

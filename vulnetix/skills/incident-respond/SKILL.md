@@ -5,9 +5,24 @@ argument-hint: <vuln-id>
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
 model: sonnet
+triggers:
+  - "incident"
+  - "actively exploit"
+  - "zero day"
+  - "in the wild"
+chain:
+  - detection-rules
+  - verify-fix
+  - vex-publish
+outputBudget: long
+cooldown: per-session
 ---
 
 # Vulnetix Incident Response Skill
+
+## Conventions
+
+This skill follows [`_lib/contract.md`](../_lib/contract.md): the Vulnetix CLI is auto-installed by hooks, `.vulnetix/capabilities.yaml` is always present, every `vulnetix vdb` call is piped through a verified `jq` filter from [`_lib/jq/`](../_lib/jq/), independent calls run in parallel as concurrent Bash tool calls, and trailing follow-ups are limited to one line. See the contract for output style, memory write rules, and cooldowns.
 
 A focused playbook when a CVE is hot. Composes IOC pivot, detection rules, fix planning, and VEX in a single linear flow.
 
@@ -18,8 +33,8 @@ Read `.vulnetix/capabilities.yaml` and `.vulnetix/memory.yaml`. Capture detectio
 ## Step 2: Confirm urgency
 
 ```bash
-vulnetix vdb sightings "$ARGUMENTS" -o json
-vulnetix vdb kev get "$ARGUMENTS" -o json 2>/dev/null
+vulnetix vdb sightings "$ARGUMENTS" -o json | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/sightings.jq"
+vulnetix vdb kev get "$ARGUMENTS" -o json 2>/dev/null | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/kev.jq"
 ```
 
 Decide: **active** (sightings within 30 days OR in KEV) → run all steps. **dormant** → suggest `/vulnetix:remediation` instead and exit.
@@ -27,8 +42,8 @@ Decide: **active** (sightings within 30 days OR in KEV) → run all steps. **dor
 ## Step 3: Containment intel
 
 ```bash
-vulnetix vdb iocs "$ARGUMENTS" -o json
-vulnetix vdb attack-techniques "$ARGUMENTS" -o json
+vulnetix vdb iocs "$ARGUMENTS" -o json | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/iocs.jq"
+vulnetix vdb attack-techniques "$ARGUMENTS" -o json | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/attack-techniques.jq"
 ```
 
 Surface top 5 IOCs and the ATT&CK technique chain.
@@ -40,8 +55,8 @@ If `derived.detection_stack` non-empty, fetch rules for each available family an
 ## Step 5: Patch path
 
 ```bash
-vulnetix vdb fixes "$ARGUMENTS" -V v2 -o json
-vulnetix vdb remediation plan "$ARGUMENTS" -V v2 -o json
+vulnetix vdb fixes "$ARGUMENTS" -V v2 -o json | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/fixes.jq"
+vulnetix vdb remediation plan "$ARGUMENTS" -V v2 -o json | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/remediation.jq"
 ```
 
 If a patch is available and the package is in this repo, suggest `/vulnetix:fix $ARGUMENTS` and offer to apply it inline (with user confirmation). If no patch, surface workarounds via `vdb workarounds $ARGUMENTS -V v2`.

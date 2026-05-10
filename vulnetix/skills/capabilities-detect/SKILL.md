@@ -4,9 +4,22 @@ description: Re-probe system binaries and repo signals; refresh .vulnetix/capabi
 user-invocable: true
 allowed-tools: Bash, Read
 model: haiku
+triggers:
+  - "capabilities"
+  - "probe environment"
+  - "what tools"
+  - "detect tools"
+chain:
+  - dashboard
+outputBudget: short
+cooldown: per-session
 ---
 
 # Vulnetix Capabilities Detector
+
+## Conventions
+
+This skill follows [`_lib/contract.md`](../_lib/contract.md): the Vulnetix CLI is auto-installed by hooks, `.vulnetix/capabilities.yaml` is always present, every `vulnetix vdb` call is piped through a verified `jq` filter from [`_lib/jq/`](../_lib/jq/), independent calls run in parallel as concurrent Bash tool calls, and trailing follow-ups are limited to one line. See the contract for output style, memory write rules, and cooldowns.
 
 This skill re-runs the capability probe and updates `.vulnetix/capabilities.yaml`. The file is read by every other Pix skill, hook, command, and agent to scope which Vulnetix CLI subcommands and external integrations (nuclei, snort, yara, semgrep, syft, grype, trivy, cosign, gh, package managers) are meaningful for the user's environment.
 
