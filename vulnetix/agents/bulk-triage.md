@@ -5,6 +5,15 @@ effort: medium
 maxTurns: 15
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write, WebFetch
 model: sonnet
+triggers:
+  - "bulk triage"
+  - "triage many"
+  - "prioritize all"
+chain:
+  - soc-triage
+  - verify-fix
+outputBudget: long
+cooldown: per-session
 ---
 
 # Vulnetix Bulk Triage Agent

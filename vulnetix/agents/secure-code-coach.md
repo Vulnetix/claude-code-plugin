@@ -5,6 +5,16 @@ effort: medium
 maxTurns: 20
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
 model: sonnet
+triggers:
+  - "secure code coach"
+  - "write secure code"
+  - "coach session"
+chain:
+  - secure-code-write
+  - sast-scan
+  - verify-fix
+outputBudget: medium
+cooldown: per-session
 ---
 
 # Secure Code Coach Agent

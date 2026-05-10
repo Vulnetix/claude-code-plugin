@@ -1,6 +1,13 @@
 # Development files
 .verification-report.txt
 
+# Local Vulnetix plugin state (auto-created by hooks)
+.vulnetix/
+
+# CLI quirk: a few subcommands write to a literal file named "json"
+# when invoked as `-o json` (they treat -o as filename). Don't commit it.
+/json
+
 # macOS
 .DS_Store
 

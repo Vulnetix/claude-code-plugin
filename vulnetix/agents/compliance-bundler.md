@@ -5,6 +5,15 @@ effort: medium
 maxTurns: 12
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
 model: sonnet
+triggers:
+  - "compliance bundle"
+  - "audit bundle"
+  - "attestation pack"
+chain:
+  - compliance-report
+  - vex-publish
+outputBudget: long
+cooldown: per-session
 ---
 
 # Compliance Bundler Agent

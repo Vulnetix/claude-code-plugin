@@ -5,13 +5,22 @@ argument-hint: <vuln-id>
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
 model: sonnet
+triggers:
+  - "remediation plan"
+  - "how to remediate"
+  - "remediation guidance"
+chain:
+  - fix
+  - verify-fix
+outputBudget: medium
+cooldown: per-session
 ---
 
 # Vulnetix Remediation Plan Skill
 
-## Capabilities awareness
+## Conventions
 
-Before deciding which integrations to compose, read `.vulnetix/capabilities.yaml`. The `derived.primary_package_manager` field selects manifest/lockfile parsing; `derived.detection_stack` filters which rule families (snort/yara/nuclei/semgrep) to fetch; `derived.sbom_stack` decides whether to compose with syft/grype/trivy; `derived.soar` decides STIX export. The session-start hook keeps this file fresh; if it is missing, run `${CLAUDE_PLUGIN_ROOT}/hooks/capabilities-detect.sh` before proceeding.
+This skill follows [`_lib/contract.md`](../_lib/contract.md): the Vulnetix CLI is auto-installed by hooks, `.vulnetix/capabilities.yaml` is always present, every `vulnetix vdb` call is piped through a verified `jq` filter from [`_lib/jq/`](../_lib/jq/), independent calls run in parallel as concurrent Bash tool calls, and trailing follow-ups are limited to one line. See the contract for output style, memory write rules, and cooldowns.
 
 
 This skill generates a comprehensive, context-aware remediation plan for a specific vulnerability using the VDB V2 remediation API. It auto-detects your repository's ecosystem, package manager, installed versions, container images, and OS to provide targeted fix guidance including registry upgrades, source patches, distribution advisories, workarounds, CWE-specific remediation strategies, and verification commands.
@@ -124,7 +133,7 @@ If no package context can be determined (no manifests, no memory), run the comma
 ### Step 3: Execute Remediation Plan Query
 
 ```bash
-vulnetix vdb remediation plan "$ARGUMENTS" -V v2 --include-guidance --include-verification-steps -o json [context flags]
+vulnetix vdb remediation plan "$ARGUMENTS" -V v2 --include-guidance --include-verification-steps -o json [context flags] | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/remediation.jq"
 ```
 
 **CLI Reference** (from `vulnetix vdb remediation plan` docs):
@@ -149,7 +158,7 @@ vulnetix vdb remediation plan "$ARGUMENTS" -V v2 --include-guidance --include-ve
 Examples:
 ```bash
 # Basic remediation plan
-vulnetix vdb remediation plan CVE-2021-44228 -V v2 --include-guidance --include-verification-steps -o json
+vulnetix vdb remediation plan CVE-2021-44228 -V v2 --include-guidance --include-verification-steps -o json | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/remediation.jq"
 
 # With full package context
 vulnetix vdb remediation plan CVE-2021-44228 -V v2 \

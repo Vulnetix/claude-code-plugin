@@ -5,9 +5,24 @@ argument-hint: <vuln-id>
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
 model: sonnet
+triggers:
+  - "detection rules"
+  - "snort"
+  - "yara"
+  - "nuclei"
+  - "ids rules"
+chain:
+  - exploit-test
+  - verify-fix
+outputBudget: short
+cooldown: per-session
 ---
 
 # Vulnetix Detection Rules Skill
+
+## Conventions
+
+This skill follows [`_lib/contract.md`](../_lib/contract.md): the Vulnetix CLI is auto-installed by hooks, `.vulnetix/capabilities.yaml` is always present, every `vulnetix vdb` call is piped through a verified `jq` filter from [`_lib/jq/`](../_lib/jq/), independent calls run in parallel as concurrent Bash tool calls, and trailing follow-ups are limited to one line. See the contract for output style, memory write rules, and cooldowns.
 
 Pulls IDS/IPS, malware-detection, and active-scan content for a CVE. Capability-aware: only fetches rule families the user can actually use.
 

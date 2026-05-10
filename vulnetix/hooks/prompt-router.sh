@@ -1,71 +1,76 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-# Prompt router — UserPromptSubmit hook.
-# Detects keyword patterns in the user's prompt and injects a one-line
-# suggestion pointing at the most relevant Vulnetix Pix skill. Silent
-# unless a match is found. Emits at most one suggestion per prompt.
+# Prompt router — UserPromptSubmit hook (v1.4.0).
+# Reads `triggers:` lists from each SKILL.md frontmatter (cached for 24h in
+# /tmp/vulnetix-trigger-cache.txt), matches the user's prompt against them,
+# and emits at most one suggestion per session per skill via _lib/cooldown.sh.
+# Always exits 0; never blocks.
 
 if ! command -v jq &>/dev/null; then
     exit 0
 fi
 
+# Source the cooldown helper. Falls back to no-op if missing.
+COOLDOWN_LIB="$(dirname "$0")/_lib/cooldown.sh"
+if [[ -f "$COOLDOWN_LIB" ]]; then
+    # shellcheck disable=SC1090
+    source "$COOLDOWN_LIB"
+else
+    already_emitted() { return 1; }
+    record_emission() { :; }
+fi
+
 INPUT=$(cat)
 PROMPT=$(echo "$INPUT" | jq -r '.user_prompt // .prompt // empty' 2>/dev/null)
 [[ -z "$PROMPT" ]] && exit 0
+PROMPT_LC=$(echo "$PROMPT" | tr '[:upper:]' '[:lower:]')
 
-# Lower-case for matching
-P=$(echo "$PROMPT" | tr '[:upper:]' '[:lower:]')
+# --- Build trigger cache (skill-name<TAB>trigger-phrase per line) ---
 
-emit() {
-    local suggestion="$1"
-    jq -n --arg msg "Vulnetix: $suggestion" '{systemMessage: $msg}'
-    exit 0
-}
+CACHE_FILE="/tmp/vulnetix-trigger-cache.txt"
+SKILLS_DIR="$(dirname "$0")/../skills"
 
-# Highest specificity first.
-if [[ "$P" =~ (zero[[:space:]\-]?day|in[[:space:]]the[[:space:]]wild|actively[[:space:]]exploit) ]]; then
-    emit "Active-exploitation language detected. Consider \`/vulnetix:incident-respond <vuln-id>\` for the full SOC playbook."
+# Refresh cache if missing or older than 24h
+if [[ ! -f "$CACHE_FILE" ]] || [[ -n "$(find "$CACHE_FILE" -mmin +1440 2>/dev/null)" ]]; then
+    : > "$CACHE_FILE"
+    for skill_md in "$SKILLS_DIR"/*/SKILL.md; do
+        [[ -f "$skill_md" ]] || continue
+        # Extract skill name and triggers from YAML frontmatter (between the first two `---`)
+        name=$(awk '/^---$/{c++; next} c==1 && /^name:/{sub(/^name: */, ""); print; exit}' "$skill_md")
+        [[ -z "$name" ]] && continue
+        # Extract trigger phrases under `triggers:` block
+        awk -v n="$name" '
+            /^---$/{c++; next}
+            c==1 && /^triggers:/{intriggers=1; next}
+            c==1 && intriggers && /^  - /{
+                phrase=$0; sub(/^  - "?/, "", phrase); sub(/"?$/, "", phrase)
+                if (length(phrase) > 0) print n "\t" phrase
+                next
+            }
+            c==1 && intriggers && /^[a-z_-]+:/{intriggers=0}
+        ' "$skill_md" >> "$CACHE_FILE"
+    done
 fi
 
-if [[ "$P" =~ (compliance|audit|sbom|attestation) ]]; then
-    emit "Compliance keyword detected. \`/vulnetix:compliance-report\` builds the full bundle (SBOM+VEX+SARIF+licenses)."
-fi
+[[ ! -s "$CACHE_FILE" ]] && exit 0
 
-if [[ "$P" =~ (fix[[:space:]]+(cve|ghsa)|patch[[:space:]]+.*vuln) ]]; then
-    emit "Use \`/vulnetix:fix <id>\` to apply, then \`/vulnetix:verify-fix <id>\` to confirm."
-fi
+# --- Match prompt against triggers ---
+# Find the first matching skill that hasn't been suggested this session.
 
-if [[ "$P" =~ (triage|prioritize[[:space:]]+vuln|review.*security[[:space:]]+(queue|backlog)) ]]; then
-    emit "Try \`/vulnetix:soc-triage\` for the prioritized SOC queue."
-fi
-
-if [[ "$P" =~ (review.*(pr|pull[[:space:]]request)|security[[:space:]]review) ]]; then
-    emit "Try \`/vulnetix:code-review-security --pr <number>\` for a unified PR security review."
-fi
-
-if [[ "$P" =~ (terraform|tofu|cloudformation|iac|kubernetes[[:space:]]manifest) ]]; then
-    emit "Run \`/vulnetix:iac-scan\` against changed IaC files."
-fi
-
-if [[ "$P" =~ (dockerfile|containerfile|build[[:space:]]image) ]]; then
-    emit "Run \`/vulnetix:container-scan\` to assess the Dockerfile."
-fi
-
-if [[ "$P" =~ ((api|access)[[:space:]_-]?(key|token)|password|secret) ]]; then
-    emit "Avoid hardcoding credentials. Run \`/vulnetix:secret-scan --staged-only\` before commit."
-fi
-
-if [[ "$P" =~ ((add|install|require|use)[[:space:]]+([a-z0-9_\@\-]+)[[:space:]]*(package|library|dep|dependency)?) ]]; then
-    emit "About to add a dependency? \`/vulnetix:dep-add-guard <package>\` checks vuln/malware/license/EOL first."
-fi
-
-if [[ "$P" =~ (auth|crypto|sql[[:space:]]injection|xss|deserialize|deserialization) ]]; then
-    emit "Writing security-sensitive code? \`/vulnetix:secure-code-write <topic>\` surfaces relevant rules and patterns."
-fi
-
-if [[ "$P" =~ (eol|end[[:space:]\-]of[[:space:]\-]life|outdated[[:space:]]runtime) ]]; then
-    emit "Check EOL status with \`/vulnetix:eol-check\`."
-fi
+while IFS=$'\t' read -r skill_name phrase; do
+    [[ -z "$skill_name" ]] && continue
+    [[ -z "$phrase" ]] && continue
+    phrase_lc=$(echo "$phrase" | tr '[:upper:]' '[:lower:]')
+    if [[ "$PROMPT_LC" == *"$phrase_lc"* ]]; then
+        if ! already_emitted "router:${skill_name}"; then
+            record_emission "router:${skill_name}"
+            jq -n \
+                --arg msg "Vulnetix: \`/vulnetix:${skill_name}\` matches this request — see \`vulnetix/skills/${skill_name}/SKILL.md\`." \
+                '{systemMessage: $msg}'
+            exit 0
+        fi
+    fi
+done < "$CACHE_FILE"
 
 exit 0

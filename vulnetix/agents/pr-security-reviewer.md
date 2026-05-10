@@ -5,6 +5,15 @@ effort: medium
 maxTurns: 18
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
 model: sonnet
+triggers:
+  - "pr review"
+  - "security review"
+  - "pre-merge gate"
+chain:
+  - code-review-security
+  - verify-fix
+outputBudget: long
+cooldown: per-session
 ---
 
 # PR Security Reviewer Agent

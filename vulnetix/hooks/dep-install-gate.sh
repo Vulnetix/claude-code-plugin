@@ -1,5 +1,15 @@
 #!/usr/bin/env bash
 set -uo pipefail
+# Cooldown helpers — silent fallback if missing.
+COOLDOWN_LIB="$(dirname "$0")/_lib/cooldown.sh"
+if [[ -f "$COOLDOWN_LIB" ]]; then
+    # shellcheck disable=SC1090
+    source "$COOLDOWN_LIB"
+else
+    already_emitted() { return 1; }
+    record_emission() { :; }
+fi
+
 
 # PreToolUse Bash gate — informational quick-check before npm/pip/cargo/etc.
 # adds a dependency. Always exits 0; never blocks.
@@ -21,6 +31,10 @@ if [[ "$COMMAND" =~ gem[[:space:]]+install[[:space:]]+([a-zA-Z0-9_.-]+) ]];     
 if [[ "$COMMAND" =~ composer[[:space:]]+require[[:space:]]+([@a-zA-Z0-9_/.-]+) ]];       then PACKAGE="${BASH_REMATCH[1]}"; ECO="packagist"; fi
 
 [[ -z "$PACKAGE" ]] && exit 0
+
+# v1.4.0 cooldown: don't re-warn on the same package within a session.
+if already_emitted "dep-install-gate:${PACKAGE}@${ECO}"; then exit 0; fi
+record_emission "dep-install-gate:${PACKAGE}@${ECO}"
 
 source "$(dirname "$0")/ensure-vulnetix-cli.sh"
 ensure_vulnetix_cli || exit 0

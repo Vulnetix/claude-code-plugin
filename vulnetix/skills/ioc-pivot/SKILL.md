@@ -5,9 +5,23 @@ argument-hint: <vuln-id>
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
 model: sonnet
+triggers:
+  - "ioc"
+  - "sightings"
+  - "indicators of compromise"
+  - "stix"
+chain:
+  - detection-rules
+  - attack-mapping
+outputBudget: medium
+cooldown: per-session
 ---
 
 # Vulnetix IOC Pivot Skill
+
+## Conventions
+
+This skill follows [`_lib/contract.md`](../_lib/contract.md): the Vulnetix CLI is auto-installed by hooks, `.vulnetix/capabilities.yaml` is always present, every `vulnetix vdb` call is piped through a verified `jq` filter from [`_lib/jq/`](../_lib/jq/), independent calls run in parallel as concurrent Bash tool calls, and trailing follow-ups are limited to one line. See the contract for output style, memory write rules, and cooldowns.
 
 Builds a SOC-grade IOC view for a single CVE — combines `vdb iocs` (CrowdSec sightings + Shadowserver counts) and `vdb sightings` (merged timeline) into a single report. Exports STIX bundle when the user has a SOAR sink.
 
@@ -18,7 +32,7 @@ Read `.vulnetix/capabilities.yaml`. Capture `derived.soar` to decide STIX export
 ## Step 2: Fetch IOCs
 
 ```bash
-vulnetix vdb iocs "$ARGUMENTS" -o json
+vulnetix vdb iocs "$ARGUMENTS" -o json | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/iocs.jq"
 ```
 
 Pass through optional flags: `--country`, `--asn`, `--limit`, `--since`. Capture: top IPs, ASNs, country distribution, ATT&CK techniques observed, Shadowserver scan counts.
@@ -26,7 +40,7 @@ Pass through optional flags: `--country`, `--asn`, `--limit`, `--since`. Capture
 ## Step 3: Fetch sightings timeline
 
 ```bash
-vulnetix vdb sightings "$ARGUMENTS" -o json
+vulnetix vdb sightings "$ARGUMENTS" -o json | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/sightings.jq"
 ```
 
 Merge timeline events (first-seen, peak, last-seen) by source.

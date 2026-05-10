@@ -5,9 +5,24 @@ argument-hint: "[--base origin/main] [--pr <number>]"
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
 model: sonnet
+triggers:
+  - "security review"
+  - "review pr"
+  - "review pull request"
+  - "pre-merge"
+chain:
+  - sast-scan
+  - secret-scan
+  - verify-fix
+outputBudget: medium
+cooldown: per-session
 ---
 
 # Vulnetix Code Review (Security) Skill
+
+## Conventions
+
+This skill follows [`_lib/contract.md`](../_lib/contract.md): the Vulnetix CLI is auto-installed by hooks, `.vulnetix/capabilities.yaml` is always present, every `vulnetix vdb` call is piped through a verified `jq` filter from [`_lib/jq/`](../_lib/jq/), independent calls run in parallel as concurrent Bash tool calls, and trailing follow-ups are limited to one line. See the contract for output style, memory write rules, and cooldowns.
 
 A complete pre-merge security gate. Composes SAST + SCA + secrets + container + IaC + license, scoped to the diff.
 

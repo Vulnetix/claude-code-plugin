@@ -5,9 +5,22 @@ argument-hint: "[<package-name>] | [--installed]"
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
 model: sonnet
+triggers:
+  - "typosquat"
+  - "malicious package"
+  - "supply chain"
+  - "typo squatting"
+chain:
+  - dep-add-guard
+outputBudget: short
+cooldown: per-session
 ---
 
 # Vulnetix Typosquat Check Skill
+
+## Conventions
+
+This skill follows [`_lib/contract.md`](../_lib/contract.md): the Vulnetix CLI is auto-installed by hooks, `.vulnetix/capabilities.yaml` is always present, every `vulnetix vdb` call is piped through a verified `jq` filter from [`_lib/jq/`](../_lib/jq/), independent calls run in parallel as concurrent Bash tool calls, and trailing follow-ups are limited to one line. See the contract for output style, memory write rules, and cooldowns.
 
 ## Step 1: Decide mode
 
@@ -18,8 +31,8 @@ model: sonnet
 
 ```bash
 vulnetix scan --block-malware -o json
-vulnetix vdb ai-malware list -o json
-vulnetix vdb packages search "$PACKAGE" --ecosystem "$ECO" -o json   # for similarity hits
+vulnetix vdb ai-malware list -o json | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/ai-list.jq"
+vulnetix vdb packages search "$PACKAGE" --ecosystem "$ECO" -o json   # for similarity hits | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/packages.jq"
 ```
 
 The `packages search` response includes typosquat-similarity scores against well-known package names.

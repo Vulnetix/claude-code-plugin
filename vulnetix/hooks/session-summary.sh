@@ -32,6 +32,13 @@ MANIFEST_COUNT=$(grep "scan_source:" "$MEMORY_FILE" 2>/dev/null | wc -l || echo 
 
 # Only output if there's meaningful data
 OPEN=$(( ${AFFECTED:-0} + ${INVESTIGATING:-0} ))
+
+# v1.4.0: stay quiet unless there are open findings — no daily noise on clean repos.
+# Surface critical/high open vulns as the gating signal; everything else is silent.
+CRITICAL_HIGH=$(grep -E '^\s*severity:\s*(critical|high|CRITICAL|HIGH)' "$MEMORY_FILE" 2>/dev/null | wc -l)
+if [[ $OPEN -le 0 ]] && [[ ${CRITICAL_HIGH:-0} -le 0 ]]; then
+    exit 0
+fi
 if [[ $TOTAL -le 0 ]] && [[ $MANIFEST_COUNT -le 0 ]]; then
     exit 0
 fi

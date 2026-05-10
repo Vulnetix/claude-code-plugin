@@ -5,9 +5,24 @@ argument-hint: <package-name> [--version X] [--ecosystem npm|pypi|...]
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
 model: sonnet
+triggers:
+  - "add dependency"
+  - "install package"
+  - "new dep"
+  - "add library"
+  - "require package"
+chain:
+  - package-search
+  - dep-resolve
+outputBudget: short
+cooldown: per-session
 ---
 
 # Vulnetix Dependency-Add Guard Skill
+
+## Conventions
+
+This skill follows [`_lib/contract.md`](../_lib/contract.md): the Vulnetix CLI is auto-installed by hooks, `.vulnetix/capabilities.yaml` is always present, every `vulnetix vdb` call is piped through a verified `jq` filter from [`_lib/jq/`](../_lib/jq/), independent calls run in parallel as concurrent Bash tool calls, and trailing follow-ups are limited to one line. See the contract for output style, memory write rules, and cooldowns.
 
 Refines `/vulnetix:package-search` into an explicit "should I add this?" verdict.
 
@@ -18,10 +33,10 @@ Read `.vulnetix/capabilities.yaml`. Default `--ecosystem` from `derived.primary_
 ## Step 2: Parallel intelligence pulls
 
 ```bash
-vulnetix vdb packages search "$PACKAGE" --ecosystem "$ECO" -o json &
-vulnetix vdb vulns "$PACKAGE" -o json &
-vulnetix vdb ai-malware list --package "$PACKAGE" -o json &
-vulnetix vdb purl "pkg:${ECO}/${PACKAGE}@${VERSION:-latest}" -o json &
+vulnetix vdb packages search "$PACKAGE" --ecosystem "$ECO" -o json & | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/packages.jq"
+vulnetix vdb vulns "$PACKAGE" -o json & | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/vulns.jq"
+vulnetix vdb ai-malware list --package "$PACKAGE" -o json & | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/ai-list.jq"
+vulnetix vdb purl "pkg:${ECO}/${PACKAGE}@${VERSION:-latest}" -o json & | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/purl.jq"
 wait
 ```
 

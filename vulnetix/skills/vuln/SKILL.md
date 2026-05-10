@@ -5,13 +5,25 @@ argument-hint: <vuln-id or package-name>
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
 model: sonnet
+triggers:
+  - "vuln lookup"
+  - "cve"
+  - "ghsa"
+  - "vulnerability"
+  - "look up cve"
+chain:
+  - exploits
+  - fix
+  - remediation
+outputBudget: medium
+cooldown: per-session
 ---
 
 # Vulnetix Vulnerability Lookup Skill
 
-## Capabilities awareness
+## Conventions
 
-Before deciding which integrations to compose, read `.vulnetix/capabilities.yaml`. The `derived.primary_package_manager` field selects manifest/lockfile parsing; `derived.detection_stack` filters which rule families (snort/yara/nuclei/semgrep) to fetch; `derived.sbom_stack` decides whether to compose with syft/grype/trivy; `derived.soar` decides STIX export. The session-start hook keeps this file fresh; if it is missing, run `${CLAUDE_PLUGIN_ROOT}/hooks/capabilities-detect.sh` before proceeding.
+This skill follows [`_lib/contract.md`](../_lib/contract.md): the Vulnetix CLI is auto-installed by hooks, `.vulnetix/capabilities.yaml` is always present, every `vulnetix vdb` call is piped through a verified `jq` filter from [`_lib/jq/`](../_lib/jq/), independent calls run in parallel as concurrent Bash tool calls, and trailing follow-ups are limited to one line. See the contract for output style, memory write rules, and cooldowns.
 
 
 This skill serves two purposes based on the argument provided:
@@ -21,23 +33,7 @@ This skill serves two purposes based on the argument provided:
 
 **This skill does not modify application code** -- it only updates `.vulnetix/memory.yaml` to track findings. Use `/vulnetix:fix` for remediation, `/vulnetix:exploits` for exploit analysis, or `/vulnetix:remediation` for a context-aware remediation plan.
 
-## CLI Availability
-
-Before running any `vulnetix` command, verify the CLI is callable:
-
-```bash
-command -v vulnetix &>/dev/null && vulnetix --version
-```
-
-If `vulnetix` is not found, install it automatically using this priority:
-
-1. **Homebrew** (if `brew` exists): `brew install vulnetix/tap/vulnetix`
-2. **Scoop** (Windows, if `scoop` exists): `scoop bucket add vulnetix https://github.com/Vulnetix/scoop-bucket && scoop install vulnetix`
-3. **Nix** (if NixOS or `nix` exists): `nix profile install github:Vulnetix/cli`
-4. **GitHub releases** (if `curl`/`wget` exist): Download the correct binary for the OS/arch from `https://github.com/Vulnetix/cli/releases/latest`, extract to `~/.local/bin/`, and `chmod +x`
-5. **Go install** (if `go` exists): `go install github.com/Vulnetix/cli/cmd/vulnetix@latest`
-
-After each install attempt, verify with `command -v vulnetix`. If all methods fail, inform the user and abort. Do not proceed without the CLI.
+**CLI install + capabilities** — see [`../_lib/contract.md`](../_lib/contract.md). Skip the install dance; the hooks handle it.
 
 ## Argument Detection
 
@@ -137,7 +133,7 @@ Check for and load `.vulnetix/memory.yaml` as described in "Reading Prior State"
 ### Step L2: Fetch Vulnerability Data
 
 ```bash
-vulnetix vdb vuln "$ARGUMENTS" -o json
+vulnetix vdb vuln "$ARGUMENTS" -o json | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/vuln.jq"
 ```
 
 **CLI Reference** (from `vulnetix vdb vuln` docs):
@@ -258,7 +254,7 @@ If not installed: **"Not currently installed -- no existing version detected."**
 ### Step P4: Fetch Package Vulnerabilities
 
 ```bash
-vulnetix vdb vulns "$ARGUMENTS" -o json
+vulnetix vdb vulns "$ARGUMENTS" -o json | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/vulns.jq"
 ```
 
 **CLI Reference** (from `vulnetix vdb vulns` docs):

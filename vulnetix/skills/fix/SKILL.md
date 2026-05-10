@@ -3,15 +3,25 @@ name: fix
 description: Get fix intelligence for a vulnerability and propose concrete remediation for the current repository
 argument-hint: <vuln-id>
 user-invocable: true
-allowed-tools: Bash, Read, Glob, Grep, Edit, Write, WebFetch
+allowed-tools: Bash, Read, Glob, Grep, Edit, Write
 model: sonnet
+triggers:
+  - "fix vuln"
+  - "patch cve"
+  - "apply fix"
+  - "remediate"
+chain:
+  - verify-fix
+  - vex-publish
+outputBudget: medium
+cooldown: per-session
 ---
 
 # Vulnetix Fix Intelligence Skill
 
-## Capabilities awareness
+## Conventions
 
-Before deciding which integrations to compose, read `.vulnetix/capabilities.yaml`. The `derived.primary_package_manager` field selects manifest/lockfile parsing; `derived.detection_stack` filters which rule families (snort/yara/nuclei/semgrep) to fetch; `derived.sbom_stack` decides whether to compose with syft/grype/trivy; `derived.soar` decides STIX export. The session-start hook keeps this file fresh; if it is missing, run `${CLAUDE_PLUGIN_ROOT}/hooks/capabilities-detect.sh` before proceeding.
+This skill follows [`_lib/contract.md`](../_lib/contract.md): the Vulnetix CLI is auto-installed by hooks, `.vulnetix/capabilities.yaml` is always present, every `vulnetix vdb` call is piped through a verified `jq` filter from [`_lib/jq/`](../_lib/jq/), independent calls run in parallel as concurrent Bash tool calls, and trailing follow-ups are limited to one line. See the contract for output style, memory write rules, and cooldowns.
 
 
 This skill fetches fix intelligence for a vulnerability and proposes concrete, actionable remediation steps for the current repository.
@@ -606,8 +616,8 @@ After each install attempt, verify with `command -v vulnetix`. If all methods fa
 Run the Vulnetix VDB fixes command for both V1 and V2 endpoints:
 
 ```bash
-vulnetix vdb fixes "$ARGUMENTS" -o json
-vulnetix vdb fixes "$ARGUMENTS" -o json -V v2
+vulnetix vdb fixes "$ARGUMENTS" -o json | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/fixes.jq"
+vulnetix vdb fixes "$ARGUMENTS" -o json -V v2 | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/fixes.jq"
 ```
 
 **V1 response** (basic fixes):
@@ -659,7 +669,7 @@ vulnetix vdb fixes "$ARGUMENTS" -o json -V v2
 Get additional context about the vulnerability:
 
 ```bash
-vulnetix vdb vuln "$ARGUMENTS" -o json
+vulnetix vdb vuln "$ARGUMENTS" -o json | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/vuln.jq"
 vulnetix vdb affected "$ARGUMENTS" -o json -V v2
 ```
 

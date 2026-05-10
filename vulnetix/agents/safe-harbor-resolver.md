@@ -5,6 +5,16 @@ effort: high
 maxTurns: 18
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
 model: sonnet
+triggers:
+  - "resolve conflict"
+  - "upgrade blocked"
+  - "safe harbor"
+chain:
+  - dep-resolve
+  - fix
+  - verify-fix
+outputBudget: long
+cooldown: per-session
 ---
 
 # Safe Harbor Resolver Agent

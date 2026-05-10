@@ -3,11 +3,24 @@ name: kev-watch
 description: Cross-reference CISA/EU KEV (Known Exploited Vulnerabilities) catalogs with installed dependencies. Surfaces actively exploited CVEs hitting this repo.
 argument-hint: "[--since YYYY-MM-DD] [--catalog cisa|eu|all]"
 user-invocable: true
-allowed-tools: Bash, Read, Glob, Grep, Edit, Write
+allowed-tools: Bash, Read, Glob, Grep
 model: sonnet
+triggers:
+  - "kev"
+  - "known exploited"
+  - "cisa kev"
+chain:
+  - soc-triage
+  - fix
+outputBudget: short
+cooldown: per-session
 ---
 
 # Vulnetix KEV Watch Skill
+
+## Conventions
+
+This skill follows [`_lib/contract.md`](../_lib/contract.md): the Vulnetix CLI is auto-installed by hooks, `.vulnetix/capabilities.yaml` is always present, every `vulnetix vdb` call is piped through a verified `jq` filter from [`_lib/jq/`](../_lib/jq/), independent calls run in parallel as concurrent Bash tool calls, and trailing follow-ups are limited to one line. See the contract for output style, memory write rules, and cooldowns.
 
 Pulls the KEV catalog and intersects with installed packages — the "what's on fire and is it in my repo?" view.
 
@@ -18,7 +31,7 @@ Read `.vulnetix/capabilities.yaml`. Use `derived.primary_package_manager` to foc
 ## Step 2: Pull KEV catalog
 
 ```bash
-vulnetix vdb kev list $ARGUMENTS -o json
+vulnetix vdb kev list $ARGUMENTS -o json | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/kev.jq"
 ```
 
 Honor `--since`, `--catalog`. Default `--catalog all`, `--since` = 30 days ago.
