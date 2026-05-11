@@ -1,6 +1,6 @@
 ---
 name: dashboard
-description: View all tracked vulnerabilities and their current status
+description: 'Vulnerability tracking dashboard: read `.vulnetix/memory.yaml`, classify by status (under_investigation, affected, fixed, not_affected) and decision (fix-applied, risk-accepted, deferred, mitigated, inlined, risk-avoided, not-affected, risk-transferred), surface CWSS-priority sorted top entries. Use when reviewing what Pix has tracked across sessions, auditing past triage decisions, or onboarding to a repo with prior security history.'
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep
 model: haiku
@@ -17,6 +17,20 @@ cooldown: per-session
 ---
 
 # Vulnetix Vulnerability Dashboard
+
+## Use when
+
+- You want a single view of every vulnerability tracked in this repo, grouped by status and decision.
+- Someone asks "where did we leave triage last week?".
+- Onboarding to a repo and you want to see prior security decisions before duplicating work.
+- You want to spot stale `under_investigation` items that need re-triaging.
+- Pre-release: confirm no high-severity entries remain open before tagging.
+
+## Don't use for
+
+- Fetching new vulnerability data — use `/vulnetix:soc-triage` or `/vulnetix:vuln`.
+- Applying fixes — use `/vulnetix:fix`.
+- Cross-repo dashboards — this skill reads only the current repo's memory file.
 
 ## Conventions
 
@@ -121,3 +135,11 @@ For each open vulnerability (up to 5), suggest a next action based on its state:
 If there are more than 5 open vulns, add: `"Use /vulnetix:exploits-search to find exploited vulnerabilities across your ecosystem."`
 
 Always end with: `"Use /vulnetix:vuln <id> for detailed info on any vulnerability."`
+
+## Edge cases & gotchas
+
+- Reads `.vulnetix/memory.yaml` only. If the file is missing, the skill exits silently — run `/vulnetix:soc-triage` or `/vulnetix:vuln` first to populate.
+- `decision.choice` is a closed enum; entries with arbitrary strings render under "Unknown decision".
+- Mermaid pie chart of decisions is auto-skipped if the total is < 3 (avoids rendering near-empty visuals).
+- For repos with > 200 tracked vulns, the dashboard caps the table at 50 rows sorted by CWSS — full list is in `memory.yaml`.
+- CWSS scores can be missing for entries that were created by `/vulnetix:vuln` lookup-only mode; the dashboard sorts those to the bottom.

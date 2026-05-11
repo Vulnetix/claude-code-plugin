@@ -1,6 +1,6 @@
 ---
 name: dep-add-guard
-description: Risk gate before adding a dependency. Combines vuln history, malware/typosquat checks, license, EOL, and maintainer health into one verdict.
+description: 'Pre-add risk gate for a new dependency — composes vuln history (`vdb vulns`), AI-malware check (`vdb ai-malware`), license compatibility, EOL status, maintainer health, version-lag — into one ALLOW/WARN/BLOCK verdict. Use when about to `npm install` / `pip install` / `cargo add` something new, vetting alternatives, or hardening the CI pre-add policy.'
 argument-hint: <package-name> [--version X] [--ecosystem npm|pypi|...]
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
@@ -19,6 +19,20 @@ cooldown: per-session
 ---
 
 # Vulnetix Dependency-Add Guard Skill
+
+## Use when
+
+- Stop-think: about to run `npm install` / `pip install` / `cargo add` something new.
+- Choosing between candidate packages (Pix verdict tells you which is safer).
+- CI policy: block PRs that add packages flagged BLOCK.
+- Auditing a recently-added dep that was not gated at addition time.
+- Cross-checking the `dep-install-gate` hook's warning with full-detail follow-up.
+
+## Don't use for
+
+- Generic package info — use `/vulnetix:package-search`.
+- Resolving a conflict — use `/vulnetix:dep-resolve`.
+- Single-CVE lookup — use `/vulnetix:vuln`.
 
 ## Conventions
 
@@ -72,3 +86,12 @@ If BLOCK, refuse and suggest alternatives via `vulnetix vdb packages search --ec
 ## Memory update
 
 Append `event: dep-add-guard` to `.vulnetix/memory.yaml` with the verdict and rationale.
+
+## Edge cases & gotchas
+
+- Verdict logic = max(any BLOCK signal, all WARN signals, baseline ALLOW). One BLOCK signal forces BLOCK regardless of others.
+- BLOCK triggers: malware/typosquat hit OR critical CVE with no fix in target version.
+- WARN triggers: copyleft license vs permissive codebase, single-maintainer-no-recent-commits, EOL upstream, version-lag > 3 minor versions.
+- Maintainer-health signals come from package-registry metadata — npm download count, last-publish date. Newer packages with one maintainer can be unfairly flagged.
+- 4 parallel CLI calls — sequential pacing helps on rate-limited tiers.
+- Memory write records the verdict + rationale even if the user decides not to install — useful for retrospective review.

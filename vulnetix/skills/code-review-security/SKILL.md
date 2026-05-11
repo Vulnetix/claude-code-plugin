@@ -1,6 +1,6 @@
 ---
 name: code-review-security
-description: PR-style security review. Runs SAST, SCA, secrets, container, and IaC scans against the diff and produces a unified review report.
+description: 'Unified pre-merge security review — SAST + SCA + secrets + container + IaC + license against the PR diff, dependency-add gate for new direct deps, optional `gh pr review` posting. Use when conducting a comprehensive security review of a feature branch, gating a merge on critical findings, or producing a structured review comment for the PR.'
 argument-hint: "[--base origin/main] [--pr <number>]"
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
@@ -19,6 +19,20 @@ cooldown: per-session
 ---
 
 # Vulnetix Code Review (Security) Skill
+
+## Use when
+
+- Pre-merge: comprehensive security gate on the PR diff.
+- Post all the right checks (SAST + SCA + secrets + container + IaC + license) without invoking each one separately.
+- Producing a unified PR review comment via `gh pr review`.
+- CI gate: block merge if any subsystem reports critical/high findings.
+- Pre-release: final security pass on the release branch.
+
+## Don't use for
+
+- Single-subsystem scan — use the specific skill (`/vulnetix:sast-scan`, etc.).
+- Triage of existing memory state — use `/vulnetix:dashboard`.
+- Multi-step orchestration with conflict resolution — use `@pr-security-reviewer` agent.
 
 ## Conventions
 
@@ -83,3 +97,12 @@ Review verdict: APPROVE | REQUEST_CHANGES (N blockers)
 ```
 
 Memory: append `event: code-review-security` with summary counts.
+
+## Edge cases & gotchas
+
+- Six subsystems run in parallel — pace by 1s between batches if rate-limited.
+- `gh pr review` posting requires `binaries.gh: true` AND a valid `gh auth status`. Pass `--no-post` to dry-run.
+- Scope defaults to PR diff (`gh pr diff --name-only`); without `--pr` it falls back to `git diff origin/main...HEAD`.
+- Empty subsystem (e.g. no Dockerfile changed) is skipped — does not contribute to the verdict.
+- Dep-add-guard runs only on NEWLY ADDED direct deps in the diff; existing deps are not re-checked here.
+- Verdict APPROVE / REQUEST_CHANGES is a recommendation — the user still drives the actual `gh pr review --approve|--request-changes`.

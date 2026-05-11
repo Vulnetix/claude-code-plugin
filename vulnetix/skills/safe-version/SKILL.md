@@ -1,6 +1,6 @@
 ---
 name: safe-version
-description: Find the safest currently-published version of a package across an ecosystem — newest version free of known vulnerabilities.
+description: 'Find the newest version of a package that is free of known vulnerabilities, capped by a `--max-major-bump` policy. Use when picking an upgrade target for a vulnerable dep, evaluating major-version churn risk, generating a "safe pin" for a lockfile, or building an `overrides` block.'
 argument-hint: <package-name> [--ecosystem npm|pypi|...] [--max-major-bump 1]
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep
@@ -18,6 +18,20 @@ cooldown: per-session
 ---
 
 # Vulnetix Safe Version Skill
+
+## Use when
+
+- Picking the upgrade target: "what is the newest safe version of express?".
+- Building a pnpm/yarn override block with the safe version as the target.
+- Evaluating major-version churn — `--max-major-bump 1` keeps you near the current major.
+- Cross-checking which versions in a range are actually clean (the safe set is sometimes non-contiguous).
+- Pre-pin decision: would pinning to vX.Y skip a known-vulnerable interval?
+
+## Don't use for
+
+- Listing every version — use `vulnetix vdb versions <package>`.
+- Applying the bump — use `/vulnetix:fix` or `/vulnetix:dep-resolve`.
+- Single-CVE lookup — use `/vulnetix:vuln`.
 
 ## Conventions
 
@@ -58,3 +72,12 @@ Suggest `/vulnetix:fix` or `/vulnetix:dep-resolve` to apply the bump.
 ## No memory writes
 
 Read-only.
+
+## Edge cases & gotchas
+
+- `--max-major-bump` defaults to 1; pass 0 to stay within the current major (patch + minor only).
+- Read-only — does not modify any manifests.
+- Safe-version computation excludes pre-release tags (`-beta`, `-rc`); pass `--include-prerelease` to include them.
+- `vdb versions <package>` returns versions across ALL ecosystems for the same package name — filter by `--ecosystem` to scope.
+- Some versions in the response have `ecosystem: ""` (empty) for CVE-affected versions that do not map cleanly to a registry — ignore those for safe-version selection.
+- Returns the NEWEST safe version, not the LOWEST-RISK — for risk-averse pinning, take the second-newest safe version (gives one minor of community soak time).

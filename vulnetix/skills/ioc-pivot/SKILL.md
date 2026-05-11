@@ -1,6 +1,6 @@
 ---
 name: ioc-pivot
-description: Pivot from a CVE to indicators of compromise (IPs, ASNs, geos) and merged in-the-wild observation timeline. Optionally export STIX 2.1 for SOAR/SIEM.
+description: 'IOC pivots for a CVE — top IPs, ASNs, geo distribution, ATT&CK technique chain, Shadowserver scan counts (1d/7d/30d/90d averages), CrowdSec community sightings, merged in-the-wild timeline. Optional STIX 2.1 bundle export for Splunk / Sentinel / Cortex / Tines ingestion. Use when investigating an active CVE, building a blocklist, exporting to SOAR, or correlating with internal SIEM logs.'
 argument-hint: <vuln-id>
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
@@ -18,6 +18,20 @@ cooldown: per-session
 ---
 
 # Vulnetix IOC Pivot Skill
+
+## Use when
+
+- A CVE is actively exploited and you need a blocklist of attacker IPs/ASNs to feed your edge firewall.
+- Exporting to STIX 2.1 for Splunk / Sentinel / Cortex / Tines ingestion.
+- Building a geo-distribution view of attack origin for an executive brief.
+- Correlating CrowdSec community sightings with internal SIEM detections.
+- Mapping the ATT&CK technique chain associated with the exploit.
+
+## Don't use for
+
+- Generating detection rules for the IDS — use `/vulnetix:detection-rules`.
+- Single-CVE enrichment without IOC focus — use `/vulnetix:vuln`.
+- Cross-CVE IOC search by country/ASN — use `vulnetix vdb iocs list` directly (this skill is per-CVE).
 
 ## Conventions
 
@@ -73,3 +87,12 @@ Note the file path in the report and suggest the user import into Splunk / Senti
 ## Memory update
 
 Append `event: ioc-pivot` to the vuln entry with summary stats (peak day, top country, source count).
+
+## Edge cases & gotchas
+
+- `vdb iocs <id>` (bare arg) returns help text. Use `vdb iocs get <id>` for per-CVE; or `vdb iocs list --cve-id <id>` for cross-CVE search.
+- `vdb iocs get <id> -o json` writes to a file LITERALLY named `json` in cwd. Use `-o /dev/stdout` to pipe.
+- Server caps `.sightings[]` at ~200 entries per CVE; the API has more — paginate with `vdb iocs list --limit/--offset` if needed.
+- STIX export needs `--format stix` on the LIST endpoint (`vdb iocs list --cve-id <id> --format stix`), not the GET endpoint.
+- Older CVEs return empty `.sightings[]` even when actively exploited — Shadowserver/CrowdSec data is recent-only (post-2024).
+- `shadowserver.topCountries` is sometimes an empty array even when scans are detected — the field is populated lazily on the server.

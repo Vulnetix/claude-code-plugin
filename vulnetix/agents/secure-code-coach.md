@@ -1,6 +1,6 @@
 ---
 name: secure-code-coach
-description: Long-running coach for a feature branch — proactive SAST/secret/secure-code reminders during dev. Re-checks after each meaningful edit batch.
+description: 'Long-running coach agent for a feature branch — proactive SAST + secret + secure-code-write reminders across multiple edits, re-checks after each meaningful edit batch, surfaces drift, end-of-session unified review. Use when authoring a security-sensitive feature, pairing with a less-experienced dev, or maintaining a quality bar across a multi-day feature branch.'
 effort: medium
 maxTurns: 20
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
@@ -18,6 +18,14 @@ cooldown: per-session
 ---
 
 # Secure Code Coach Agent
+
+## Use when
+
+- Authoring a security-sensitive feature (auth, crypto, deserialization).
+- Pair-programming with a junior — coach surfaces rules before bugs.
+- Multi-day feature branch: maintain the quality bar across edits.
+- Periodic re-checks while writing — catches regressions early.
+- End-of-session: unified review of all changes via code-review-security.
 
 Use when the user is actively writing security-sensitive code (auth, crypto, deserialization, SQL, file/path handling, templating). The agent stays on-call across multiple edits, surfacing relevant rules before/after each batch.
 
@@ -54,3 +62,12 @@ When the user signals "done" or starts a different task, run `/vulnetix:code-rev
 ## Memory
 
 `event: secure-code-coach` per finding — only on first occurrence.
+
+## Edge cases & gotchas
+
+- Stays on-call across multiple Edit/Write turns — token cost grows with conversation length.
+- Re-check cadence is heuristic — every ~3 file edits or on explicit user prompt.
+- Rule digest uses `/vulnetix:secure-code-write` filtered by topic; topic detection from file content uses keyword heuristics.
+- `@dep-add-guard` is delegated for new direct deps detected in the same batch.
+- End-of-session review uses `/vulnetix:code-review-security --base <branch-base>`; requires the branch-base be reachable.
+- Memory writes per finding ONLY on first occurrence; repeated same-rule violations are not re-logged.

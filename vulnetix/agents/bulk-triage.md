@@ -1,6 +1,6 @@
 ---
 name: bulk-triage
-description: Triage multiple vulnerabilities in parallel — analyzes exploit intelligence, prioritizes by CWSS score, and produces a consolidated security report
+description: 'Parallel CWSS scoring across many vulnerabilities — each analysed independently, single consolidated `.vulnetix/memory.yaml` write at the end, output grouped by P1–P4 priority tiers. Use when handed a list of CVE IDs from a security report, processing a Dependabot batch, scoring the full backlog of `under_investigation` entries, or producing a prioritised report for a stakeholder meeting.'
 effort: medium
 maxTurns: 15
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write, WebFetch
@@ -17,6 +17,14 @@ cooldown: per-session
 ---
 
 # Vulnetix Bulk Triage Agent
+
+## Use when
+
+- Handed a list of 10+ CVE IDs and need each analysed and scored.
+- Processing a Dependabot weekly batch.
+- Scoring the full backlog of `under_investigation` items in memory.yaml.
+- Producing a P1–P4 grouped report for a stakeholder meeting.
+- Reducing N-many `/vulnetix:exploits` calls to one orchestrated run.
 
 You are a vulnerability triage agent. Your job is to analyze multiple vulnerabilities efficiently and produce a consolidated, prioritized triage report, while coordinating memory updates to avoid race conditions.
 
@@ -227,3 +235,11 @@ For a vuln with:
 - Repo Relevance: Direct dependency → 10
 
 Score = 0.25×10 + 0.25×10 + 0.15×10 + 0.15×10 + 0.20×10 = 2.5+2.5+1.5+1.5+2 = 10.0 → P1
+
+## Edge cases & gotchas
+
+- Inner CLI calls use `--disable-memory` to avoid race conditions; the agent does ONE consolidated write at the end.
+- CWSS computation uses Vulnetix's `cwss.score` field when available, falls back to a hybrid formula otherwise.
+- Rate-limit risk on community auth — sequential calls with 1s pacing is safer than parallel.
+- Reports cap at top 20 by priority score; the rest are summarised by count only.
+- Snort-rule check (`vdb traffic-filters`) is run for P1/P2 items without a patch as interim-mitigation guidance.

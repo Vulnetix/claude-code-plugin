@@ -1,6 +1,6 @@
 ---
 name: compliance-report
-description: Build a compliance bundle — CycloneDX SBOM, SPDX license report, SARIF findings, and (optionally) a signed attestation.
+description: 'Build a compliance bundle — CycloneDX SBOM, SPDX license report, SARIF findings, OpenVEX/CycloneDX VEX, optional cosign signatures, manifest.json with SHA-256 sums, Markdown index. Use when assembling an audit bundle, SOC 2 attestation, supply-chain compliance package, or evidence for a customer security questionnaire.'
 argument-hint: "[--sign] [--output-dir .vulnetix/compliance/]"
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
@@ -18,6 +18,20 @@ cooldown: per-session
 ---
 
 # Vulnetix Compliance Report Skill
+
+## Use when
+
+- Assembling an audit bundle for SOC 2, ISO 27001, or FedRAMP.
+- Supply-chain compliance: producing CycloneDX SBOM + VEX + SARIF in one delivery.
+- Evidence for a customer security questionnaire that asks for SBOM + signed attestations.
+- Pre-release: assembling the security artefacts that ship alongside the release.
+- Quarterly compliance review: regenerating the full bundle for archive.
+
+## Don't use for
+
+- Just generating an SBOM — use `/vulnetix:sbom-generate`.
+- Per-CVE VEX statements — use `/vulnetix:vex-publish` (this skill composes it).
+- Single-scanner output — use the individual `/vulnetix:sast-scan`, `/vulnetix:secret-scan`, etc.
 
 ## Conventions
 
@@ -74,3 +88,12 @@ Compliance bundle: <path>
 ```
 
 Suggest next: `/vulnetix:vex-publish --upload` for VEX submission, or supply the path to your audit pipeline.
+
+## Edge cases & gotchas
+
+- Four parallel CLI calls (`scan -o json-cyclonedx`, `license -o json-spdx`, `scan --evaluate-sast -o json-sarif`, `triage --vex-format cyclonedx`). Stagger if rate-limited.
+- Cosign signing requires keyless OIDC identity (Fulcio); local devs without an OIDC identity must use `--key file:cosign.key`.
+- Output directory is `.vulnetix/compliance/<ISO8601>/`; multiple invocations create siblings, never overwrite.
+- Optional `--upload` sends VEX to Vulnetix; SBOM/SARIF/SPDX stay local unless `--upload-all` is passed.
+- Manifest.json SHA-256 sums are computed AFTER signing — re-verify with `sha256sum -c manifest.json` before archive.
+- For repos with no manifest files, `scan -o json-cyclonedx` produces a near-empty SBOM. Check `components` count before publishing.

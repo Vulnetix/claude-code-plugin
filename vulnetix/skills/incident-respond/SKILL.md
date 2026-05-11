@@ -1,6 +1,6 @@
 ---
 name: incident-respond
-description: End-to-end SOC playbook for a CVE actively in the wild — sightings, IOCs, detection rules, fix/remediation, and VEX publication in one workflow.
+description: 'End-to-end incident-response playbook for a CVE actively in the wild — confirms urgency via KEV/EPSS/sightings, pulls IOCs and ATT&CK chain, fetches detection rules for installed families, evaluates patch path or workarounds, generates VEX attestation, posts a consolidated report. Use when a CVE goes hot, your dependency is named in a vendor advisory, or the team needs a one-conversation SOC response.'
 argument-hint: <vuln-id>
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
@@ -19,6 +19,20 @@ cooldown: per-session
 ---
 
 # Vulnetix Incident Response Skill
+
+## Use when
+
+- A CVE went hot overnight and you need a complete SOC response in one conversation.
+- A vendor advisory names a dependency you ship.
+- Active sightings spiked (CrowdSec, Shadowserver) on a vuln you have.
+- Building the timeline of "what we knew when" for a post-incident review.
+- Coordinating detection + patch + VEX in a single workflow.
+
+## Don't use for
+
+- Routine triage — use `/vulnetix:soc-triage`.
+- Single-step actions — use the constituent skills directly (`/vulnetix:fix`, `/vulnetix:detection-rules`, etc.).
+- For dormant CVEs (no recent sightings, not in KEV) — the skill exits early and recommends `/vulnetix:remediation` instead.
 
 ## Conventions
 
@@ -91,3 +105,12 @@ Next:
 ## Memory update
 
 Append `event: incident-respond` with stage outcomes to the vuln entry. Single consolidated write.
+
+## Edge cases & gotchas
+
+- Stage 1 (parallel intel pull) hits 6 endpoints simultaneously — rate-limit retries will delay the whole batch. Add `--silent` to suppress retry chatter.
+- Active classification = KEV-listed OR sightings within 30d OR EPSS > 0.5. Dormant CVEs get a one-line bailout and the skill exits.
+- Detection deployment writes to `.vulnetix/detection/<VULN_ID>/` only for families in `derived.detection_stack`. Empty stack = no rule files written.
+- Workarounds are pulled via `vdb workarounds <id> -V v2` if no patch is available; the V2 endpoint is partial in some environments.
+- VEX is generated even if the user has not made a decision yet — the default mapping uses `status: under_investigation` → `under_investigation`. Pass `--final-only` to publish only decided items.
+- Memory coordination: `--disable-memory` on all inner calls, single consolidated write at end with `event: incident-respond`.

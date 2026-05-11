@@ -1,6 +1,6 @@
 ---
 name: vuln
-description: Look up a vulnerability by ID or list all vulnerabilities for a package
+description: 'Vulnerability intelligence lookup by CVE / GHSA / PYSEC / RUSTSEC / GO / SNYK / ZDI / MSCVE / RHSA / KEV / EUVD / OSV / 78+ ID formats — or by package name. Use when triaging a specific CVE, listing all known vulnerabilities for an installed dependency, checking CISA KEV status, reading SSVC decisions, fetching x_threatExposure rules, or assessing repo impact via lockfile cross-reference.'
 argument-hint: <vuln-id or package-name>
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
@@ -20,6 +20,21 @@ cooldown: per-session
 ---
 
 # Vulnetix Vulnerability Lookup Skill
+
+## Use when
+
+- You receive a CVE / GHSA / PYSEC / RUSTSEC / GO / SNYK identifier and need its full enrichment profile (CVSS v3.1 + v4, EPSS, CISA KEV, SSVC decision, x_attackSurface, x_exploitationMaturity, x_remediationTimeline).
+- A package name (express, lodash, log4j-core) is mentioned and you need every known vulnerability for it filtered to the installed version.
+- A teammate links a security advisory and you need to assess whether `package-lock.json` is in the affected range.
+- `.vulnetix/memory.yaml` carries a stale triage entry and you want to refresh enrichment without re-running `/vulnetix:exploits`.
+- You need the canonical `affected[]` list across all ecosystems (npm + maven + amazon-linux + redhat + ...) for a single CVE.
+
+## Don't use for
+
+- Applying fixes — use `/vulnetix:fix`.
+- Generating Snort / YARA / Nuclei detection content — use `/vulnetix:detection-rules`.
+- Building a SOC daily queue — use `/vulnetix:soc-triage`.
+- Searching for exploited vulnerabilities across the wider DB — use `/vulnetix:exploits-search`.
 
 ## Conventions
 
@@ -335,3 +350,13 @@ Update `.vulnetix/memory.yaml` as described in "Writing Updated State" above. On
 5. **Always update `.vulnetix/memory.yaml`** after the lookup
 6. Version source transparency is mandatory
 7. Prior data serves as baseline on re-invocation -- update, don't restart
+
+## Edge cases & gotchas
+
+- Raw `vdb vuln CVE-XXXX -o json` returns an ARRAY of 20 container views (one per upstream source). `cna.affected` is split across them — CVE-2021-44228 has 639 entries total but only 1 in `.[0]`. Always pipe through `_lib/jq/vuln.jq` which aggregates.
+- Vulnetix's enrichment lives in `containers.adp[0].x_*` — same across containers. Reading from other indices gives identical x_threatExposure data.
+- Raw response is 4 MB for popular CVEs. Without the jq filter you will blow the LLM context window.
+- Package-mode (`vdb vulns express`) is aggressively rate-limited on community auth — 30s timeout retries kick in. Use `--limit 5` to keep payload small or pace 4+ seconds between calls.
+- Empty `attackTechniques`/`sightings`/`iocs` arrays for older CVEs do NOT mean "not exploited" — that data is recent-only (post-2024).
+- The `x_kev` block is null for non-KEV CVEs; downstream code must use `// null` fallback (the jq filter already does).
+- 78+ ID formats includes obscure ones (HUNTR-, BDU:, JVNDB-, MGASA-). If a lookup returns empty, try the GHSA alias before falling back to package-name mode.

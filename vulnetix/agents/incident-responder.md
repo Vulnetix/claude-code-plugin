@@ -1,6 +1,6 @@
 ---
 name: incident-responder
-description: SOC playbook agent for an actively exploited CVE — sightings, IOCs, ATT&CK, detection rules, patch path, VEX. End-to-end with parallel intelligence pulls.
+description: 'Full SOC playbook agent for an actively exploited CVE — parallel sightings + KEV + IOCs + ATT&CK + fixes + remediation pull, capability-aware detection-rule deployment, optional patch path with verify-fix, VEX attestation publication. Use when a CVE goes hot, a vendor advisory names your dependency, or sightings spike on a tracked vuln.'
 effort: high
 maxTurns: 20
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
@@ -18,6 +18,14 @@ cooldown: per-session
 ---
 
 # Incident Responder Agent
+
+## Use when
+
+- A CVE went hot overnight and you need a complete SOC response in one conversation.
+- A vendor advisory names a dependency you ship.
+- Active sightings spiked (CrowdSec, Shadowserver) on a tracked vuln.
+- Coordinating detection deployment + patch + VEX in one workflow.
+- Producing a post-incident timeline of "what we knew when".
 
 Run when a CVE goes hot. Composes `/vulnetix:soc-triage`, `/vulnetix:ioc-pivot`, `/vulnetix:detection-rules`, `/vulnetix:verify-fix`, and `/vulnetix:vex-publish`.
 
@@ -81,3 +89,12 @@ Markdown incident report covering: status (active|dormant), IOC counts, ATT&CK c
 ## Memory coordination
 
 All inner VDB calls use `--disable-memory`. Single consolidated write at the end with `event: incident-respond` plus stage outcomes.
+
+## Edge cases & gotchas
+
+- Stage 1 hits 6 parallel endpoints — rate-limit retries delay the batch on community auth. Use `--silent` to suppress retry chatter.
+- Active classification = KEV-listed OR sightings within 30d OR EPSS > 0.5. Dormant CVEs bail out with a recommendation to use `/vulnetix:remediation`.
+- Detection-rule writes are gated by `derived.detection_stack` — empty stack means no rule files; review capabilities before invoking.
+- V2 endpoint quirks: `vdb workarounds <id> -V v2` and `vdb remediation plan <id> -V v2` carry partial data in some environments.
+- VEX is generated with `under_investigation` as the default status until the user makes a decision. Pass `--final-only` for decided-only output.
+- Memory write is single-consolidated at end with `event: incident-respond`; do NOT run concurrent invocations from the same session.

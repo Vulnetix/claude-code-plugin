@@ -1,6 +1,6 @@
 ---
 name: safe-harbor-resolver
-description: Resolve dependency-version conflicts blocking a fix. Tries override → safe-harbour inline → workaround paths. End-to-end remediation when a simple bump fails.
+description: 'Multi-step dependency-conflict resolver for vulns where `/vulnetix:fix` fails — tries Strategy A (single bump retry), Strategy B (package-manager override), Strategy C (safe-harbour inline as first-party), Strategy D (workaround + detection-only mitigation). Use when an upgrade is blocked by peer-dep conflicts, the upstream maintainer has abandoned the package, or you need to weigh inline-vs-workaround trade-offs.'
 effort: high
 maxTurns: 18
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
@@ -18,6 +18,14 @@ cooldown: per-session
 ---
 
 # Safe Harbor Resolver Agent
+
+## Use when
+
+- `/vulnetix:fix` failed because `<pm> install` errored on peer-deps.
+- Upstream maintainer abandoned the package — need inline patching.
+- Weighing inline-as-first-party (Type A0) vs workaround-only (Type C).
+- Resolving a transitive vuln without bumping the parent direct dep.
+- Last-resort before accepting risk on a CVE.
 
 Last-resort agent for vulns where `/vulnetix:fix` fails because the lockfile won't resolve. Tries multiple strategies in order.
 
@@ -84,3 +92,12 @@ Verification: <pass | fail>
 Files changed: <list>
 Memory decision: <choice>
 ```
+
+## Edge cases & gotchas
+
+- Strategy ordering A→B→C→D is intentional; A is least invasive (manifest-only), D is detection-only (no fix).
+- Strategy A retry tries each candidate safe version against the constraints — can run 5-10 inner `vdb versions`+install attempts.
+- Strategy B overrides have ecosystem-specific semantics: `npm overrides`, `pnpm.overrides`, `yarn resolutions`, `pip --no-deps + pin`, `go replace`, `cargo [patch]`.
+- Strategy C inlines code from the upstream package — IMPORTS THE LICENSE TOO. Copy LICENSE / NOTICE / ATTRIBUTION files.
+- Strategy D requires `derived.detection_stack` non-empty for detection-only mitigation to make sense; otherwise the agent surfaces the limitation.
+- Memory write uses `decision.choice: inlined` for Strategy C — the closed-enum value. Custom strings break the dashboard.

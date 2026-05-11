@@ -1,6 +1,6 @@
 ---
 name: fix
-description: Get fix intelligence for a vulnerability and propose concrete remediation for the current repository
+description: 'Concrete remediation proposal with Safe Harbour confidence — version bump, inline as first-party code, patch, workaround, or advisory. Use when applying a fix for a triaged CVE, evaluating fix-type trade-offs across registry / source / distro patches, producing rollback-safe manifest edits with dry-run verification, or generating a CycloneDX SBOM after the fix lands.'
 argument-hint: <vuln-id>
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
@@ -18,6 +18,21 @@ cooldown: per-session
 ---
 
 # Vulnetix Fix Intelligence Skill
+
+## Use when
+
+- You have a triaged CVE and want a concrete remediation proposal — not just "upgrade".
+- A version bump conflicts with peer-deps and you need to evaluate inline-as-first-party-code (Type A0) or patch (Type B).
+- You need to apply the fix, regenerate the lockfile, run a dry-run scan, and produce a CycloneDX SBOM in one workflow.
+- Generating rollback-safe manifest edits with `.vulnetix-backup` so you can revert.
+- Cross-checking registry fixes vs. distro patches vs. upstream source PRs.
+
+## Don't use for
+
+- Just understanding the CVE — use `/vulnetix:vuln` or `/vulnetix:exploits`.
+- Verifying the fix landed — use `/vulnetix:verify-fix`.
+- Resolving a peer-dep conflict that blocks the fix — use `/vulnetix:dep-resolve`.
+- Building a multi-CVE upgrade plan — use the `@dep-upgrade-orchestrator` agent.
 
 ## Conventions
 
@@ -1130,3 +1145,13 @@ GitHub security sync: Dependabot <state>, CodeQL <N alerts>, Secret scanning <N 
 - After fixing, suggest re-running `/vulnetix:package-search` if adding new dependencies as alternatives
 - The `/vulnetix:exploits` and `/vulnetix:package-search` skills also read and contribute to `.vulnetix/memory.yaml` — decisions made in any skill are visible to all others
 - **When no patch is available, Safe Harbour is low (< 0.35), or the user's triage decision is not a patch** (e.g., `risk-accepted`, `deferred`, `mitigated`), automatically fetch Snort rules via `vulnetix vdb traffic-filters "$ARGUMENTS" -o json` and offer them as an interim network-level defense. Present each rule's `rawText` for direct IDS/IPS deployment.
+
+## Edge cases & gotchas
+
+- `vdb fixes <id>` response top-level keys are `summary`, `timeline`, `exploitationMaturity`, `kevRequiredAction`, `cweRemediations`, `fixes{registry,distributions,sourceCode,solutions,workarounds,configurations}`, `aiAnalysis`, `vendorComments`. Pipe through `_lib/jq/fixes.jq` to extract.
+- The `.fixes.registry[]` array is empty for many ecosystems — distros and source patches are often the only options. Check `.summary.{registryFixes,distributionPatches,sourceFixes}` counts first.
+- `kevRequiredAction` is the authoritative CISA directive — 300-400 chars typical. Never truncate when presenting to the user.
+- `exploitationMaturity.factors.crowdSecSightings` is the count of real-world attacks. Treat > 100 as "weaponised in the wild".
+- Dry-run scan with `vulnetix scan --evaluate-sca --severity high --exploits weaponized` returns non-zero exit if a weaponised vuln remains — use that as the gate.
+- The 5 fix types (A0 inline, A version bump, B patch, C workaround, D advisory) are ranked by user-impact, not by reliability. Inline is highest-control but highest-maintenance.
+- For `not-affected` decisions backed by reachability analysis, set `decision.choice: not-affected` (closed enum) — arbitrary strings break the dashboard.

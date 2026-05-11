@@ -1,6 +1,6 @@
 ---
 name: detection-rules
-description: Fetch Snort, Suricata, YARA, and Nuclei detection content for a vulnerability. Filters rule families to the user's installed detection stack.
+description: 'IDS/IPS detection content for a CVE — Snort/Suricata-compatible rules, YARA signatures, ProjectDiscovery Nuclei templates, traffic-filter rules. Capability-aware: skips families when the binary is not installed (no Snort = no Snort output). Use when deploying defences for a CVE without a patch, augmenting SAST with active detection, or feeding the SOC engineering pipeline.'
 argument-hint: <vuln-id>
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
@@ -19,6 +19,20 @@ cooldown: per-session
 ---
 
 # Vulnetix Detection Rules Skill
+
+## Use when
+
+- A CVE has no patch yet and you need detection-only mitigation.
+- Augmenting SAST with active runtime detection (Snort/Suricata).
+- Feeding the SOC engineering pipeline with rule files.
+- Building a Nuclei scan template for an authorised target assessment.
+- Hardening a YARA ruleset against a newly-discovered malware family.
+
+## Don't use for
+
+- Executing the rules — this skill writes files; the user runs the engine.
+- Patching the underlying issue — use `/vulnetix:fix`.
+- Single-CVE enrichment — use `/vulnetix:vuln`.
 
 ## Conventions
 
@@ -88,3 +102,12 @@ Append `event: detection-rules` with counts per family to the vuln entry.
 
 - This skill never executes rules. The user (or `/vulnetix:exploit-test`) runs them.
 - Filter is honest: if YARA is missing, the YARA section is omitted from the report and from disk writes.
+
+## Edge cases & gotchas
+
+- Each family is fetched ONLY if the binary is in `derived.detection_stack`. Override by passing `--force` if you want raw rule output regardless.
+- `vdb snort-rules`, `vdb yara-rules`, `vdb nuclei` accept `--format rules|yaml` for non-JSON output (the engine's native format).
+- Some CVEs return zero rules across all families — that means no community detection content exists, not that the skill failed.
+- YARA rules can have multiple hash-only matchers; if your YARA build was compiled without hash-module support, those rules fail silently.
+- Nuclei templates require a target URL/IP at invocation time; the skill produces the template, not the scan.
+- `vdb traffic-filters <id>` returns Snort-format rules tagged for Suricata compatibility — confirm Suricata accepts the rule before deploying to Suricata.

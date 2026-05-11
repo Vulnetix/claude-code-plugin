@@ -1,6 +1,6 @@
 ---
 name: license-check
-description: Detect license conflicts and policy violations across dependencies. Outputs SPDX SBOM with license findings.
+description: 'Package license analysis — detect copyleft conflicts against a permissive policy, surface AGPL / SSPL / GPL contaminants, output SPDX SBOM with per-package license findings. Use when auditing a release for license compliance, vetting a new dependency''s license, building an OSS-attribution document, or producing a customer-facing license disclosure.'
 argument-hint: "[--policy permissive|copyleft-aware|strict]"
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
@@ -17,6 +17,19 @@ cooldown: per-session
 ---
 
 # Vulnetix License Check Skill
+
+## Use when
+
+- Pre-release: confirm no copyleft contaminants in a permissive-licensed product.
+- Vetting a new dep's license before adoption.
+- Building an OSS attribution document (NOTICE file).
+- Producing a customer-facing license disclosure.
+- Quarterly compliance review with `--policy strict` to catch any non-allowlisted licenses.
+
+## Don't use for
+
+- Vulnerability scanning — use `/vulnetix:sca-scan`.
+- License text retrieval — use the package manager directly (`npm view <pkg> license`).
 
 ## Conventions
 
@@ -52,3 +65,12 @@ If `--bundle` flag provided, also output the file path so `/vulnetix:compliance-
 ## Memory update
 
 `.vulnetix/licenses/<timestamp>.summary.yaml` with conflict counts.
+
+## Edge cases & gotchas
+
+- `--policy permissive` flags GPL-* / AGPL-* / LGPL-* against an MIT/Apache codebase; `--policy strict` allowlists only MIT, Apache-2.0, BSD-2/3-Clause, ISC, MPL-2.0.
+- Custom allowlist via `.vulnetix/license-policy.yaml` overrides the built-in policy.
+- License detection uses package metadata; dual-licensed packages (MIT OR Apache-2.0) are reported as the FIRST license unless the policy file says otherwise.
+- SPDX expression parsing handles common patterns (MIT, Apache-2.0, BSD-3-Clause) but not custom non-SPDX strings like "see LICENSE file" — those flag as "Unknown".
+- Transitive deps are included by default; pass `--direct-only` to scope to top-level packages.
+- License findings DO NOT include legal review — flag them for legal counsel, do not auto-approve based on the skill output.
