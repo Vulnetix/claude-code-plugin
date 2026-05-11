@@ -1,6 +1,6 @@
 ---
 name: package-search
-description: Search for packages and assess security risk before adding as dependencies
+description: 'Pre-dependency-add risk gate: search a package across 7 ecosystems (npm, pypi, go, cargo, rubygems, maven, packagist), surface vulnerabilityCount, maxSeverity, exploitationSignals (crowdSecSightings, exploitCount, inCisaKev, inVulnCheckKev), eolStatus, scorecardScore, and safeHarbour.recommendedVersions. Use when evaluating a new dependency, choosing between alternative packages, or auditing direct deps for supply-chain risk before `npm install`.'
 argument-hint: <package-name>
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
@@ -18,6 +18,20 @@ cooldown: per-session
 ---
 
 # Vulnetix Package Search Skill
+
+## Use when
+
+- About to add a new dependency (`npm install x`, `pip install y`, `cargo add z`) and want a risk profile first.
+- Comparing two candidate packages (e.g. axios vs got, lodash vs ramda) — counts + maxSeverity + scorecard tell the story.
+- Auditing the direct-dependency list of a freshly-onboarded repo for known issues.
+- You need `safeHarbour.recommendedVersions` for a specific package to pin in a lockfile.
+- Cross-checking a package against `exploitationSignals.inCisaKev` before adoption.
+
+## Don't use for
+
+- Looking up a specific CVE — use `/vulnetix:vuln`.
+- Hard supply-chain gate before commit — use the `dep-install-gate` hook or `/vulnetix:dep-add-guard`.
+- Listing every CVE for a package — use `/vulnetix:vuln <package>` (package mode).
 
 ## Conventions
 
@@ -339,3 +353,12 @@ If the user requests alternatives, repeat steps 2-6 with the suggested names.
 - Never silently add dependencies — always get explicit user approval first
 - **All outputs MUST include package versions** — both current (if installed) and latest. Never omit version numbers from tables, diffs, or recommendations.
 - **Version source transparency is mandatory** — always disclose how the current version was determined (lockfile, manifest, node_modules, user-supplied, or not installed). If version detection fails for a source, note what was attempted.
+
+## Edge cases & gotchas
+
+- Top-level response is an OBJECT with `.packages[]` (not a bare array). Code that does `.[]` directly hits "Cannot index object with number".
+- `exploitationSignals.xdbCount` is from VulnCheck XDB; absence does not mean "no exploits exist" — also check `vdb exploits` for the full per-source breakdown.
+- `scorecardScore` can be null for newer packages (< 30 days published) — treat null as "unscored" not "safe".
+- `safeHarbour.recommendedVersions` may be empty for packages with zero known vulns; that is the safe case, not an error.
+- Each package result includes a `_links` array with HATEOAS hrefs — the jq filter drops these to save tokens.
+- Search is case-sensitive on the package-name segment for ecosystems that allow it (npm scoped names retain the @scope/ prefix).

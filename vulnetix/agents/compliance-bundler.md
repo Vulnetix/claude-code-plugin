@@ -1,6 +1,6 @@
 ---
 name: compliance-bundler
-description: Build a complete compliance bundle (CycloneDX SBOM, SPDX licenses, SARIF findings, VEX) and optionally sign + upload. End-to-end audit packaging.
+description: 'End-to-end compliance bundle agent — CycloneDX SBOM + SPDX licenses + SARIF findings + OpenVEX/CycloneDX VEX, optional cosign signing, optional Vulnetix upload, manifest.json with SHA-256 sums, Markdown index. Use when assembling an audit deliverable, building a customer-facing security disclosure, or producing the quarterly compliance archive.'
 effort: medium
 maxTurns: 12
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
@@ -17,6 +17,14 @@ cooldown: per-session
 ---
 
 # Compliance Bundler Agent
+
+## Use when
+
+- Assembling an audit deliverable (SOC 2, ISO 27001, FedRAMP).
+- Building a customer-facing security disclosure.
+- Producing the quarterly compliance archive.
+- Pre-release: the bundle ships with the release.
+- Replacing manual SBOM + VEX + SARIF generation with one orchestrated run.
 
 ## Stage 1: Capabilities
 
@@ -70,3 +78,12 @@ Compliance bundle: $OUT
 - Signed: <yes|no>
 - Uploaded: <yes|no>
 ```
+
+## Edge cases & gotchas
+
+- Four parallel CLI calls + optional syft cross-validation — pace by 1s on rate limits.
+- Cosign signing prefers keyless OIDC (Fulcio); local devs without OIDC must use `--key file:cosign.key`.
+- Manifest.json SHA-256 sums computed AFTER signing — re-verify with `sha256sum -c manifest.json` before archive.
+- Optional `--upload` sends VEX only; SBOM/SARIF/SPDX stay local unless `--upload-all`.
+- Output dir is `.vulnetix/compliance/<ISO8601>/`; multiple runs create siblings, never overwrite.
+- Empty repo (no manifests) produces a near-empty SBOM; verify `components.length > 0` before publishing.

@@ -1,6 +1,6 @@
 ---
 name: threat-feed
-description: Daily threat-intel digest combining AI-discovered vulns, in-the-wild exploitation, AI-malware families, exploit trends, and vendor trends.
+description: 'Daily threat-intel digest — AI-discovered vulnerabilities, AI-in-the-wild exploitation observations, AI-authored malware families, exploit-trends rollup, vendor-trends month-over-month deltas. Use when producing a weekly security newsletter, scanning for novel threats, monitoring vendors with rising CVE counts, or tracking AI-discovered vulns from the researcher leaderboard.'
 argument-hint: "[--vendor X] [--ecosystem Y] [--limit N]"
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep
@@ -18,6 +18,20 @@ cooldown: per-session
 ---
 
 # Vulnetix Threat Feed Skill
+
+## Use when
+
+- Producing a weekly threat-intel digest for the team.
+- Scanning for novel AI-discovered vulnerabilities since last week.
+- Monitoring a specific vendor (`--vendor microsoft`) for rising CVE counts.
+- Tracking AI-authored malware families relevant to your stack.
+- Spotting in-the-wild exploitation observations from the AI corpus.
+
+## Don't use for
+
+- Single-CVE deep-dive — use `/vulnetix:vuln` or `/vulnetix:exploits`.
+- Repo-specific intersection — use `/vulnetix:soc-triage` or `/vulnetix:kev-watch`.
+- Detection rule generation — use `/vulnetix:detection-rules`.
 
 ## Conventions
 
@@ -58,3 +72,12 @@ For each item across sections, mark `In repo?` if affected package is in lockfil
 ## No memory writes
 
 This skill is read-only. No memory.yaml update.
+
+## Edge cases & gotchas
+
+- Five parallel VDB calls — `ai-discoveries`, `ai-in-wild`, `ai-malware`, `exploit-trends`, `vendor-trends`. Stagger by 1s if hitting community-tier rate limits.
+- `vdb ai-discoveries` lists CVEs WITH a researcher attribution; absence does not mean undiscovered, it means "no AI researcher claimed it in our corpus".
+- `vdb ai-malware` covers AI-authored OR AI-runtime-targeted families; the `.family` field disambiguates.
+- `exploit-trends` rollup is a severity-tier histogram by count, not per-CVE — pair with `exploits-search` for drill-down.
+- For `--vendor` filtering across the four AI endpoints, the field name varies (`vendor` vs `vendorProject` vs `productVendor`); the jq filter normalises to `.package // .family`.
+- No user-specific filtering — `--ecosystem` is the only narrowing arg. Cross-correlate with installed deps client-side.

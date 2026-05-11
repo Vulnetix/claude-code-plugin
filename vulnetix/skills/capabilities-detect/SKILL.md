@@ -1,6 +1,6 @@
 ---
 name: capabilities-detect
-description: Re-probe system binaries and repo signals; refresh .vulnetix/capabilities.yaml so downstream skills know which Vulnetix CLI features are meaningful for this system+repo
+description: 'Detect installed security binaries (nuclei, snort, yara, semgrep, syft, grype, trivy, cosign, gh, package managers) and repo signals (manifests, Dockerfiles, IaC, CI configs); write .vulnetix/capabilities.yaml. Use when starting a session, after installing a new tool (brew install yara), when other Pix skills emit "unknown capability" notes, or to force-refresh stale capability state.'
 user-invocable: true
 allowed-tools: Bash, Read
 model: haiku
@@ -16,6 +16,19 @@ cooldown: per-session
 ---
 
 # Vulnetix Capabilities Detector
+
+## Use when
+
+- A session just started and `.vulnetix/capabilities.yaml` does not exist or is older than 24h.
+- A new security tool was just installed (`brew install yara`, `pip install semgrep`) and you want subsequent Pix calls to pick it up.
+- The repo gained a new manifest type, Dockerfile, or `*.tf` file and you want downstream skills to scope their behaviour.
+- You need to inspect what Pix currently believes about the environment before debugging a skill.
+- A downstream skill reports "unknown capability" or fetches rule families you cannot use.
+
+## Don't use for
+
+- Actually scanning code or dependencies — use `/vulnetix:sast-scan`, `/vulnetix:sca-scan`, or `/vulnetix:scan`.
+- Running individual CLI lookups — use `/vulnetix:vuln`, `/vulnetix:exploits`, etc.
 
 ## Conventions
 
@@ -64,3 +77,11 @@ This skill never modifies application code, manifests, or memory.yaml. It only r
 ## Schema reference
 
 See `website/content/docs/data-structures/capabilities-yaml.md` for the full schema. Three top-level sections: `binaries`, `repo`, `derived`. The `derived.detection_stack`, `derived.sbom_stack`, `derived.primary_package_manager`, and `derived.has_*` flags are the fields most other skills consult.
+
+## Edge cases & gotchas
+
+- `command -v` runs in the user's shell; binaries surfaced only via fish functions or zsh autoload may not be detected. Re-run via `VULNETIX_FORCE_DETECT=1 ...` after installing.
+- Cache TTL is 24h. A fresh tool install during a session needs a manual re-detect.
+- Probes 41 binaries × 30 repo signals. On very large monorepos the find pass can take 1-2 seconds — first-session cost only.
+- Auth-status probe ignores VULNETIX_API_KEY in non-interactive shells if the env var is set after shell start.
+- The `derived.detection_stack` array reflects callable binaries only — having a `*.rules` file in the repo without `snort` installed still yields an empty detection stack.

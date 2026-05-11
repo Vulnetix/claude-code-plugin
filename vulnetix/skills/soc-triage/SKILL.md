@@ -1,6 +1,6 @@
 ---
 name: soc-triage
-description: Daily SOC triage feed prioritized for this repo. Pulls Vulnetix's score-driven triage list and cross-references with installed dependencies.
+description: 'SOC daily-pull triage feed — Vulnetix''s score-driven queue cross-referenced with installed dependencies. Use when starting a SOC shift, prioritising the queue by EPSS × KEV × repo-impact, filtering by severity / ecosystem / KEV-only / since-date, producing a P1–P4 action list grouped by package manager, or handing off a watchlist to the next shift.'
 argument-hint: "[--severity high|critical] [--limit N]"
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep
@@ -19,6 +19,20 @@ cooldown: per-session
 ---
 
 # Vulnetix SOC Triage Skill
+
+## Use when
+
+- Start of a SOC shift: "what landed overnight that hits our deps?".
+- Building today's P1–P4 action list grouped by package manager.
+- Filtering for KEV-only or EPSS > 0.5 items intersected with installed packages.
+- Producing a handoff watchlist for the next shift.
+- Weekly all-hands prep: top 10 items the team should know about.
+
+## Don't use for
+
+- Single-CVE deep-dive — use `/vulnetix:vuln` or `/vulnetix:exploits`.
+- Cross-CVE exploit search by ecosystem — use `/vulnetix:exploits-search`.
+- Applying fixes — use `/vulnetix:fix` per item.
 
 ## Conventions
 
@@ -74,3 +88,11 @@ Append `event: soc-triage` history entries for any newly surfaced vulns (status:
 - Use `-o json` for parseable output. Pipe to `jq` for filtering.
 - Honor `derived.detection_stack` — for vulns without fixes, suggest `/vulnetix:detection-rules <id>` only when at least one of `snort`, `suricata`, `yara`, `nuclei` is in the stack.
 - For SOAR=stix, suggest `/vulnetix:ioc-pivot <id> --format stix` for high-severity items.
+
+## Edge cases & gotchas
+
+- Triage feed is rate-limited on community auth — keep `--limit 50` or less to avoid 30s timeout retries.
+- Repo-impact cross-reference happens client-side; if `.vulnetix/capabilities.yaml` shows `primary_package_manager: unknown`, the cross-reference is skipped and all items appear regardless of repo deps.
+- Default sort is by score descending; for date-ordered use `--sort recent`.
+- `--since YYYY-MM-DD` is server-side; older windows hit a cold cache and add 1-2s.
+- Memory writes use `--disable-memory` on inner calls and a single consolidated write at the end — never run two `/vulnetix:soc-triage` invocations in parallel from the same session.

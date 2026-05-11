@@ -1,6 +1,6 @@
 ---
 name: verify-fix
-description: Re-scan after applying a fix and gate on exploit-maturity + severity thresholds. Confirms the patched manifest no longer carries the targeted CVE.
+description: 'Post-fix verification — re-scan the repo, gate on `--exploits weaponized --severity high`, recheck the specific CVE against the new installed version, write the verdict to `.vulnetix/memory.yaml`. Use when confirming a fix landed, validating a version bump did not introduce regressions, or producing a clean-scan attestation for compliance.'
 argument-hint: <vuln-id>
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
@@ -17,6 +17,20 @@ cooldown: per-session
 ---
 
 # Vulnetix Fix Verification Skill
+
+## Use when
+
+- You just applied a fix via `/vulnetix:fix` and need PASS/FAIL confirmation.
+- Validating a peer-dep upgrade chain did not introduce new vulnerabilities.
+- Producing a clean-scan attestation for a compliance bundle.
+- Pre-release: confirming all triaged P1/P2 items are resolved.
+- Setting decision status from `under_investigation` to `fixed` with audit trail.
+
+## Don't use for
+
+- Initial scanning — use `/vulnetix:scan` or `/vulnetix:soc-triage`.
+- Applying the fix — use `/vulnetix:fix` first.
+- Multi-CVE upgrade verification — use `@dep-upgrade-orchestrator` agent.
 
 ## Conventions
 
@@ -81,3 +95,12 @@ Other regressions introduced: <count>  (list top 5 if any)
 
 - Suggest `/vulnetix:dep-resolve` if version bump is blocked by a transitive constraint.
 - Suggest `/vulnetix:safe-harbor-resolver` (agent) if multiple manifests conflict.
+
+## Edge cases & gotchas
+
+- The gated scan (`scan --exploits weaponized --severity high`) returns exit code 1 on findings — wrap with `|| true` if you want to capture without aborting the surrounding shell.
+- Recheck calls `vdb fixes` and `vdb vuln` — pipe both through the jq filters to avoid 4MB raw payloads in your context.
+- `decision.choice: fix-applied` is one of 8 closed-enum values — never write arbitrary strings; the dashboard skill renders them under "Unknown".
+- If the manifest was edited but the lockfile not regenerated (`npm install` was skipped), the scan reports the OLD vulnerability even though the manifest looks correct. Always run `<pm> install` before verify.
+- Cross-check: the affected range in the vuln response should EXCLUDE the post-fix version. If both old and new versions are in the range, the bump did not reach a safe version.
+- Memory write is single-consolidated at the end (with `--disable-memory` on inner CLI calls) — never run verify-fix concurrently from the same session.

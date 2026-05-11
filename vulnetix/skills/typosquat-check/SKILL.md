@@ -1,6 +1,6 @@
 ---
 name: typosquat-check
-description: Detect malware and typosquats among installed dependencies (and prospective additions).
+description: 'Typosquat and malicious-package detection across installed dependencies (or a single prospective addition) — cross-checks AI-malware family intelligence, package-name similarity to known popular packages, low maintainer-health signals. Use when auditing a freshly-onboarded repo, vetting a single suspicious package, gating CI on supply-chain risk, or investigating an incident.'
 argument-hint: "[<package-name>] | [--installed]"
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
@@ -17,6 +17,20 @@ cooldown: per-session
 ---
 
 # Vulnetix Typosquat Check Skill
+
+## Use when
+
+- Onboarding: scan all installed deps for typosquat/malware matches.
+- Vetting a single package that looks suspicious (`react-utill`, `lodash-utility`, etc.).
+- CI gate: block any installed dep flagged BLOCK.
+- Post-incident: cross-reference your installed deps against newly-discovered malware families.
+- Investigating a single package after a vendor advisory mentions name-similarity attacks.
+
+## Don't use for
+
+- CVE-based vulnerability scanning — use `/vulnetix:sca-scan`.
+- Generic package risk before adding — use `/vulnetix:dep-add-guard`.
+- Detecting compromised packages via runtime behaviour — Pix is static-only.
 
 ## Conventions
 
@@ -49,3 +63,12 @@ Verdicts: ALLOW / WARN / BLOCK.
 ## Step 4: Memory + .gitignore note
 
 Append `event: typosquat-check` with verdicts to memory. If any BLOCK, surface a strong suggestion to remove the package and check git history (`git log -p -- <package-manifest-path>`).
+
+## Edge cases & gotchas
+
+- Similarity scoring is heuristic (Levenshtein + popularity weighting). Borderline names need human review.
+- `--installed` mode reads the lockfile per `derived.primary_package_manager` — make sure the lockfile is up-to-date.
+- `vdb ai-malware list --package <name>` returns matches across ecosystems; filter by `--ecosystem` for accuracy.
+- BLOCK verdict is rare and high-signal; treat as urgent. Most flagged packages are WARN (borderline name + low maintainer signal).
+- Removing a flagged package is destructive — review `git log -p -- <manifest>` BEFORE deletion to understand what code depends on it.
+- False positives: legitimate packages with similar names to popular ones (e.g. typescript-eslint vs typescript) can score high — manual triage needed.

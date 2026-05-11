@@ -1,6 +1,6 @@
 ---
 name: eol-check
-description: Flag end-of-life runtimes and packages in the repo. Surfaces EOL Node, Python, Java, Go, .NET, base images, and key libraries.
+description: 'End-of-life detection for runtimes (Node, Python, Java, Go, .NET) and key packages — surfaces past-EOL items, items reaching EOL within 90 days, and EOL base images for containers. Use when planning a runtime upgrade, auditing for unsupported versions, gating a deploy against EOL deps, or producing a remediation roadmap.'
 argument-hint: "[--strict]"
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep
@@ -18,6 +18,19 @@ cooldown: per-session
 ---
 
 # Vulnetix EOL Check Skill
+
+## Use when
+
+- Quarterly upgrade planning: which runtimes hit EOL in the next 90 days?
+- Audit: any past-EOL runtimes in production?
+- CI gate: block deploys if any EOL runtime is detected.
+- Container base-image EOL check (alpine 3.16, debian 10, etc.).
+- Cross-reference: an EOL runtime + an unpatched CVE = critical priority.
+
+## Don't use for
+
+- Vulnerability scanning — use `/vulnetix:sca-scan` or `/vulnetix:soc-triage`.
+- License auditing — use `/vulnetix:license-check`.
 
 ## Conventions
 
@@ -55,3 +68,12 @@ If `--strict`, also flag versions reaching EOL within 90 days.
 ## Memory update
 
 `event: eol-check` with EOL items per vuln entry (or a top-level `runtimes` block in memory.yaml if entries don't exist).
+
+## Edge cases & gotchas
+
+- `vulnetix scan --block-eol` exits non-zero on EOL hits — wrap with `|| true` to capture without aborting.
+- EOL dates are from `vulnetix vdb product` — authoritative for major runtimes, less complete for niche libraries.
+- `--strict` mode flags items reaching EOL within 90 days. Default mode only flags past-EOL.
+- Container base images need a Dockerfile/Containerfile in the repo; the skill cannot scan a `--image` registry tag without one.
+- For runtimes with overlapping LTS schedules (Node 18 vs 20), EOL dates can shift; re-run periodically rather than caching.
+- Output flags EOL but does not propose an upgrade path — pair with `/vulnetix:safe-version` for the recommended target.

@@ -1,6 +1,6 @@
 ---
 name: vex-publish
-description: Generate VEX statements (OpenVEX / CycloneDX VEX) from triage decisions in memory.yaml and optionally upload to Vulnetix.
+description: 'Generate OpenVEX / CycloneDX VEX attestations from `.vulnetix/memory.yaml` triage decisions, optionally sign with cosign, optionally upload to Vulnetix and post to a GitHub PR. Use when documenting triage decisions for supply-chain consumers, attaching VEX to a CycloneDX SBOM, or satisfying customer attestation requests.'
 argument-hint: "[--format openvex|cyclonedx] [--upload]"
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
@@ -17,6 +17,19 @@ cooldown: per-session
 ---
 
 # Vulnetix VEX Publication Skill
+
+## Use when
+
+- Triage cycle is complete and you need to publish VEX statements for supply-chain consumers.
+- A customer requested OpenVEX attestations for a specific delivery.
+- Attaching VEX to a CycloneDX SBOM in a compliance bundle.
+- Posting VEX status as a PR comment so reviewers see the security disposition.
+- Auditing the decision history — VEX is the durable record of what was decided when.
+
+## Don't use for
+
+- Making the triage decisions — use `/vulnetix:vuln`, `/vulnetix:exploits`, `/vulnetix:fix` first; this skill publishes existing decisions.
+- Generating the SBOM itself — use `/vulnetix:sbom-generate`.
 
 ## Conventions
 
@@ -76,3 +89,12 @@ File: .vulnetix/vex/<timestamp>.vex.json
 Uploaded: <yes|no>
 PR comment: <yes|no>
 ```
+
+## Edge cases & gotchas
+
+- VEX status maps from `decision.choice` via a closed dict — `not-affected/risk-avoided` → `not_affected`, `fix-applied` → `fixed`, `risk-accepted/deferred/mitigated` → `affected (with mitigation)`, `investigating` → `under_investigation`. Custom decision strings break the mapping.
+- `--format openvex` (default) and `--format cyclonedx` produce different schemas; consumers downstream typically prefer one or the other.
+- `--upload` sends to the Vulnetix triage endpoint — requires authenticated CLI; community-tier may rate-limit.
+- PR comment posting needs `binaries.gh: true` AND the current directory inside a PR-context git repo (CI envs typically have GITHUB_REF set).
+- Signing with cosign uses keyless OIDC by default; the user must have a valid OIDC identity (CI runners typically do, dev laptops may not).
+- Memory schema requires `decision.choice` populated for every entry to be published — entries with `status: under_investigation` are filtered out unless `--include-investigating` is passed.

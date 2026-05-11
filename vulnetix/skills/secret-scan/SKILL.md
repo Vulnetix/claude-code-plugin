@@ -1,6 +1,6 @@
 ---
 name: secret-scan
-description: Detect hardcoded secrets (API keys, tokens, credentials) in repo. Pre-commit and on-demand.
+description: 'Hardcoded-secret detection — AWS keys, GitHub PATs, Slack tokens, Stripe keys, generic high-entropy strings. Pre-commit (`--staged-only`), explicit paths, or full repo. Use when guarding `git commit`, auditing a repo for leaked credentials, validating no secrets entered the diff before push, or producing a rotation list for an exposed-secret incident.'
 argument-hint: "[--paths file1 file2] [--staged-only]"
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
@@ -17,6 +17,19 @@ cooldown: per-session
 ---
 
 # Vulnetix Secret Scan Skill
+
+## Use when
+
+- Pre-commit: confirm no secrets in staged files (`--staged-only`).
+- Pre-push: scan diff vs `origin/HEAD` for high-confidence leaks.
+- Audit: full-repo scan for an exposed-secret incident.
+- Producing a rotation list — which provider keys need to be revoked NOW.
+- CI gate: block merge if any high-confidence secret detected.
+
+## Don't use for
+
+- Vulnerability detection — use `/vulnetix:sast-scan` or `/vulnetix:sca-scan`.
+- Validating an already-fixed leak — use git filter-repo or BFG to remove from history.
 
 ## Conventions
 
@@ -65,3 +78,12 @@ If a secret is found in a committed file (not just staged):
 ## Memory update
 
 Append a sanitized record to `.vulnetix/secrets/${TIMESTAMP}.summary.yaml` (counts by type, file paths, no values).
+
+## Edge cases & gotchas
+
+- Output redacts 60% of each detected secret. Never re-print the un-redacted value.
+- High-confidence findings include AWS / GitHub PAT / Slack / Stripe patterns. Generic high-entropy strings are medium-confidence; tune your CI gate accordingly.
+- `--staged-only` reads `git diff --cached --name-only` — files not yet staged are skipped. Run AFTER `git add`.
+- Detection is regex-based; obfuscated secrets (split across vars, base64-wrapped) may be missed. Pair with a hand review for high-stakes audits.
+- For secrets ALREADY in git history, this skill detects them on next change only. Use `gitleaks --log-opts="--all"` for full history scan, then BFG / filter-repo to remove.
+- False-positive suppression uses inline comments (`# pix-ignore-secret`) on the next line; the suppression is per-line, not per-pattern.

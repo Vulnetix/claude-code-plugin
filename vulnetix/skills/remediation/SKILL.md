@@ -1,6 +1,6 @@
 ---
 name: remediation
-description: Get a context-aware remediation plan for a vulnerability with fix verification steps
+description: 'Context-aware remediation plan (V2 endpoint) — registry fixes ranked by confidence, upstream commits, distribution patches, workarounds with effectiveness scores, CWE-specific defensive strategies, and per-package-manager verification commands. Use when you need a structured remediation playbook (not just a single fix), CWE guidance for related vulnerabilities, or per-ecosystem verify commands.'
 argument-hint: <vuln-id>
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Edit, Write
@@ -17,6 +17,20 @@ cooldown: per-session
 ---
 
 # Vulnetix Remediation Plan Skill
+
+## Use when
+
+- You need a structured playbook with prioritized actions, not just "upgrade to X".
+- CWE-specific guidance is needed (e.g. CWE-89 SQL injection across multiple packages).
+- Per-package-manager verification commands are required (`npm audit fix`, `pip-audit`, `go mod tidy --no-deps-check`, `cargo audit`).
+- Workaround effectiveness scores matter — partial mitigations need to be weighed against deferral.
+- Producing a remediation report for stakeholders who want the "what + why + how + verify" breakdown.
+
+## Don't use for
+
+- Just applying a single fix — use `/vulnetix:fix`.
+- Verifying the fix worked — use `/vulnetix:verify-fix`.
+- Detection-only mitigation — use `/vulnetix:detection-rules`.
 
 ## Conventions
 
@@ -342,3 +356,11 @@ If rules are returned, display each rule's `rawText` for direct IDS/IPS deployme
 8. **Always update `.vulnetix/memory.yaml`** after generating the plan
 9. If Dependabot already has a PR for this fix, prefer merging that PR over manual edits
 10. The V2 remediation endpoint is the most comprehensive single endpoint -- it aggregates data from registry fixes, source fixes, distribution patches, workarounds, CWE guidance, and KEV data into one response
+
+## Edge cases & gotchas
+
+- V2 endpoint requires `-V v2` flag. Without it the older V1 fixes endpoint returns instead and the response shape differs.
+- `.actions[]` array is sometimes split between top-level and `priorityActions[]` depending on CVE age; the jq filter handles both via fallback.
+- Verification commands are templates — they include placeholders like `{{package}}` that the consuming skill must expand before showing to the user.
+- CWE guidance is generic across vulns sharing that CWE — useful for systemic fixes, not as a substitute for vuln-specific remediation.
+- `threatIntel.summary` may exceed 1KB for high-profile CVEs; keep truncation thresholds at 200+ chars or surface the whole thing.

@@ -1,6 +1,6 @@
 ---
 name: kev-watch
-description: Cross-reference CISA/EU KEV (Known Exploited Vulnerabilities) catalogs with installed dependencies. Surfaces actively exploited CVEs hitting this repo.
+description: 'CISA + EU KEV (Known Exploited Vulnerabilities) catalog watch — pull recent KEV additions, intersect with installed dependencies, surface entries with imminent due dates. Use when checking if you have KEV-listed CVEs in your repo, monitoring CISA additions on a schedule, or producing a deadline-driven action list with `--since` filtering.'
 argument-hint: "[--since YYYY-MM-DD] [--catalog cisa|eu|all]"
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep
@@ -17,6 +17,20 @@ cooldown: per-session
 ---
 
 # Vulnetix KEV Watch Skill
+
+## Use when
+
+- You want to know "are any of our deps in CISA KEV right now?".
+- Monitoring CISA additions since a date (`--since 2026-04-01`).
+- Producing a deadline-driven action list — items with KEV due dates within 14 days.
+- Choosing between competing CVEs to patch first based on KEV listing.
+- Pre-audit: ensuring no KEV items remain open past their due date.
+
+## Don't use for
+
+- Per-CVE enrichment — use `/vulnetix:vuln`.
+- Daily SOC pull — use `/vulnetix:soc-triage` (KEV is one signal among many there).
+- Single-KEV lookup by CVE — use `vulnetix vdb kev get <id>` directly.
 
 ## Conventions
 
@@ -64,3 +78,12 @@ Highlight rows where deadline is < 14 days as URGENT.
 ## Memory update
 
 For each in-repo match, ensure a memory entry exists with a `kev_deadline` field and `event: kev-watch` history line.
+
+## Edge cases & gotchas
+
+- `vdb kev list -o json` writes to file `json`; use `-o /dev/stdout`.
+- `vdb kev list` returns multi-source items (CISA, vulncheck, Vulnetix-internal); `dueDate` is populated only for CISA-source entries. Other sources have `dueDate: null`.
+- `requiredAction` is null for non-CISA sources; only CISA mandates carry the action text.
+- The Vulnetix KEV catalog is the V2 endpoint (`vdb kev list --catalog vulnetix`) and is BROADER than CISA KEV — includes weaponised CVEs not yet in CISA.
+- `knownRansomwareCampaignUse` is `"Known"` / `"Unknown"` (strings, not booleans). Check string equality, not truthiness.
+- `--since` filter is server-side and very fast; client-side date math will be slower for large catalogs.

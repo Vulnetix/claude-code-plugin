@@ -1,6 +1,6 @@
 ---
 name: attack-mapping
-description: Map vulnerabilities in this repo to MITRE ATT&CK techniques. Produces a heatmap of techniques observed across tracked CVEs.
+description: 'MITRE ATT&CK technique mapping for a CVE or every entry in `.vulnetix/memory.yaml`. Use when planning detection coverage gaps, mapping a CVE to defender controls, building an executive heatmap of repo risk by tactic, or correlating with internal D3FEND counter-techniques.'
 argument-hint: "[<vuln-id>] | [--all-tracked]"
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep
@@ -18,6 +18,20 @@ cooldown: per-session
 ---
 
 # Vulnetix ATT&CK Mapping Skill
+
+## Use when
+
+- You need to know which ATT&CK techniques a CVE enables (Initial Access? Execution? Persistence?).
+- Building an executive heatmap: which tactics dominate this repo's risk profile.
+- Mapping current detection coverage gaps via ATT&CK → D3FEND.
+- Correlating multiple CVEs to a shared technique chain (e.g. T1190 + T1059).
+- Producing input for a purple-team exercise.
+
+## Don't use for
+
+- Generating detection rules for the IDS — use `/vulnetix:detection-rules`.
+- Single-CVE deep-dive — use `/vulnetix:exploits`.
+- IOC pivots — use `/vulnetix:ioc-pivot`.
 
 ## Conventions
 
@@ -59,3 +73,12 @@ Ranking: by vuln count descending. Top 20 only; total in summary footer.
 ## Memory update
 
 Append `event: attack-mapping` with technique IDs to each touched vuln entry.
+
+## Edge cases & gotchas
+
+- `vdb attack-techniques <id>` (bare) returns help text. Use `vdb attack-techniques get <id>`.
+- `vdb attack-techniques get <id> -o json` writes to file `json`; use `-o /dev/stdout`.
+- `.attackTechniques[]` is OFTEN EMPTY for older CVEs (pre-2024 enrichment gap) — empty array does not mean "no techniques associated", it means "no mapping captured in this corpus".
+- `--all-tracked` mode reads memory.yaml and can be slow for repos with 100+ tracked vulns; one network round-trip per vuln.
+- Technique names (`name` field) are sometimes null in the response; the jq filter falls back gracefully.
+- D3FEND counter-techniques are referenced but not inlined — the skill links to the MITRE D3FEND page rather than embedding the full counter-technique catalog.
