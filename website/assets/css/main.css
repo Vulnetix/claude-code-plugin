@@ -313,6 +313,43 @@ img { max-width: 100%; display: block; }
 }
 .content a:hover { border-bottom-color: var(--vx-mint-strong); opacity: 1; }
 
+/* --- Prose link defaults outside .content --- */
+.glass-card__p a,
+.pricing-slab__sub a,
+.pricing-desc a,
+.ecosystem-slab__sub a,
+.faq-item__body a,
+.closing-cta__sub a,
+.feature-slab--cream .feature-slab__desc a {
+  color: var(--vx-mint-strong);
+  border-bottom: 1px solid rgba(0,148,132,0.3);
+  transition: border-color 0.15s;
+}
+.glass-card__p a:hover,
+.pricing-slab__sub a:hover,
+.pricing-desc a:hover,
+.ecosystem-slab__sub a:hover,
+.faq-item__body a:hover,
+.closing-cta__sub a:hover,
+.feature-slab--cream .feature-slab__desc a:hover {
+  border-bottom-color: var(--vx-mint-strong);
+  opacity: 1;
+}
+
+.home-hero__sub a,
+.section-hero__desc a,
+.feature-slab:not(.feature-slab--cream) .feature-slab__desc a {
+  color: var(--vx-mint);
+  border-bottom: 1px solid var(--vx-mint-30);
+  transition: border-color 0.15s;
+}
+.home-hero__sub a:hover,
+.section-hero__desc a:hover,
+.feature-slab:not(.feature-slab--cream) .feature-slab__desc a:hover {
+  border-bottom-color: var(--vx-mint);
+  opacity: 1;
+}
+
 .content code {
   font-family: var(--font-mono);
   font-size: 0.88em;
