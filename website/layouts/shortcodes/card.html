@@ -1,0 +1,9 @@
+{{- $link := .Get "link" -}}
+{{- $title := .Get "title" -}}
+{{- $subtitle := .Get "subtitle" -}}
+{{- $external := strings.HasPrefix $link "http" -}}
+{{- $href := cond (or $external (strings.HasPrefix $link "/")) $link ($link | relURL) -}}
+<a class="vx-card" href="{{ $href }}"{{ if $external }} target="_blank" rel="noopener"{{ end }}>
+  <div class="vx-card__title">{{ $title }}</div>
+  {{ with $subtitle }}<div class="vx-card__desc">{{ . }}</div>{{ end }}
+</a>
