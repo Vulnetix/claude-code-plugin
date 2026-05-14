@@ -86,6 +86,14 @@
     purls: ([$arr[] | .containers.adp[0].x_purls // []] | flatten | unique),
     tags: ($enrich.tags // []),
 
+    # Canonical reachability inputs. `affectedRoutines` is the deduplicated
+    # functions+files list (CVE 5.x programRoutines/programFiles plus the
+    # AI-derived x_affectedFunctions) — the authoritative "what to grep your
+    # codebase for" list. `attackPaths` maps tactics → ATT&CK techniques and
+    # drives detection-rule selection (Snort / Nuclei / YARA), NOT reachability.
+    affectedRoutines: ($enrich.x_affectedRoutines // []),
+    attackPaths: ($enrich.x_attackPaths // []),
+
     # Aggregated affected list across ALL containers (each container scopes a
     # different ecosystem). Cap at 200 entries to bound output size for CVEs
     # like log4j with 600+ entries; if truncated, the LLM should call

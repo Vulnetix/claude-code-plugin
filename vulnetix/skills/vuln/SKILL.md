@@ -187,6 +187,14 @@ Use **Glob** and **Grep** to assess repo impact:
 3. **Determine installed version** (lockfile --> manifest --> installed artifacts --> unknown). Report source transparently.
 4. **Assess dependency relationship** -- direct vs transitive, whether installed version is in vulnerable range
 5. **Cross-reference CycloneDX SBOMs** in `.vulnetix/scans/*.cdx.json`
+6. **Reachability — grep the codebase using `affectedRoutines`:** the filtered output (see `_lib/jq/vuln.jq`) exposes `.affectedRoutines[]` — the deduplicated functions + files list from the CVE record plus AI enrichment. This is the authoritative "what to grep for" source:
+   ```bash
+   vulnetix vdb vuln "$ARGUMENTS" -o json \
+     | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/vuln.jq" \
+     | jq -r '.affectedRoutines[] | select(.kind=="function") | .name' \
+     | xargs -I{} git grep -nE '\b{}\b' -- 'src/' ':!*test*'
+   ```
+   Pair it with per-language call-graph / coverage tooling (see the [package-managers appendix](https://vuln.coordinator.com/appendices/package-managers/)) when symbols match. If `.affectedRoutines` is empty, defer routine-level reachability to `/vulnetix:exploits`.
 
 ### Step L5: Present Structured Summary
 

@@ -213,6 +213,13 @@ vulnerabilities:
       privileges_required: none          # none | low | high
       user_interaction: none             # none | required
       reachability: direct               # direct | transitive | not-found | unknown
+                                         # Evidence sourced from `affectedRoutines` (see _lib/jq/vuln.jq):
+                                         #   vulnetix vdb vuln <id> -o json \
+                                         #     | jq -f $CLAUDE_PLUGIN_ROOT/skills/_lib/jq/vuln.jq \
+                                         #     | jq -r '.affectedRoutines[] | select(.kind=="function") | .name' \
+                                         #     | xargs -I{} git grep -nE '\b{}\b' src/
+                                         # If symbols match → `direct`; transitive-only manifest hit → `transitive`;
+                                         # routines absent from build → `not-found`; routines list empty → `unknown`.
       exposure: public-facing            # public-facing | internal | local-only | unknown
     cwss:                                # CWSS-derived priority (populated by /vulnetix:exploits)
       score: 87.5                        # 0-100 composite priority score
