@@ -187,14 +187,24 @@ Use **Glob** and **Grep** to assess repo impact:
 3. **Determine installed version** (lockfile --> manifest --> installed artifacts --> unknown). Report source transparently.
 4. **Assess dependency relationship** -- direct vs transitive, whether installed version is in vulnerable range
 5. **Cross-reference CycloneDX SBOMs** in `.vulnetix/scans/*.cdx.json`
-6. **Reachability — grep the codebase using `affectedRoutines`:** the filtered output (see `_lib/jq/vuln.jq`) exposes `.affectedRoutines[]` — the deduplicated functions + files list from the CVE record plus AI enrichment. This is the authoritative "what to grep for" source:
+6. **Reachability — prefer the CLI tree-sitter scan; fall back to grep:**
+
+   **Primary (deterministic, fast):** `vulnetix vdb vuln` already runs a tree-sitter AST scan against the local project when invoked with the default `--reachability both` (or `direct` / `transitive`). The filtered output exposes a `.reachability` block populated from `x_reachability`:
+   ```bash
+   vulnetix vdb vuln "$ARGUMENTS" -o json --reachability both \
+     | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/vuln.jq" \
+     | jq '.reachability'
+   ```
+   Trust this output when `.reachability.queries_run > 0` — the matches are real AST hits on the installed package (`.direct`) and on first-party / other-dep code paths into it (`.transitive`). Record the result as authoritative evidence.
+
+   **Fallback (heuristic):** if `.reachability` is `null`, `queries_run` is `0`, or both arrays are empty AND no `skipped_*` reason is reported (i.e. the CLI could not run — no v2 queries published, ecosystem/package unresolved, or `--reachability=off`), drive grep from `.affectedRoutines` instead:
    ```bash
    vulnetix vdb vuln "$ARGUMENTS" -o json \
      | jq -f "${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/vuln.jq" \
      | jq -r '.affectedRoutines[] | select(.kind=="function") | .name' \
      | xargs -I{} git grep -nE '\b{}\b' -- 'src/' ':!*test*'
    ```
-   Pair it with per-language call-graph / coverage tooling (see the [package-managers appendix](https://vuln.coordinator.com/appendices/package-managers/)) when symbols match. If `.affectedRoutines` is empty, defer routine-level reachability to `/vulnetix:exploits`.
+   Pair the grep fallback with per-language call-graph / coverage tooling (see the [package-managers appendix](https://vuln.coordinator.com/appendices/package-managers/)). If `.affectedRoutines` is also empty, defer routine-level reachability to `/vulnetix:exploits`.
 
 ### Step L5: Present Structured Summary
 

@@ -17,12 +17,25 @@
 #   - Drops: x_aliases (large cross-reference lists), provenance/timestamp metadata,
 #     duplicated descriptions per container.
 
-(. | if type == "array" then . else [.] end) as $arr
+# Normalise the two shapes the CLI emits:
+#   (a) raw array of containers (no --reachability run)
+#   (b) `{data: [...containers...], x_reachability: {...}}` wrapper added by
+#       attachReachability when the response was an array
+# Object responses (single-container shape) carry x_reachability inline.
+(. | if type == "object" and has("data") and (.x_reachability != null)
+       then .data else . end) as $body
+| ($body | if type == "array" then . else [.] end) as $arr
 | ($arr[0]) as $v
 | ([$arr[] | .containers.adp[0]? | select(.x_threatExposure != null)] | .[0]) as $enrich
 | ([$arr[] | .containers.cna.affected // []] | flatten) as $all_affected
 | ([$arr[] | .containers.cna.references // []] | flatten | unique_by(.url)) as $all_refs
 | ([$arr[] | .containers.cna.descriptions // []] | flatten | unique_by(.value)) as $all_descs
+# CLI tree-sitter reachability block — present when --reachability is not
+# `off` and the advisory has v2 tree-sitter queries published. May appear at
+# the top level (wrapped shape) or per-container (inline shape).
+| ((. | if type == "object" then .x_reachability else null end)
+    // ([$arr[] | .x_reachability // empty] | .[0])
+    // null) as $reach
 | {
     id: ($v.cveMetadata.cveId // null),
     state: ($v.cveMetadata.state // null),
@@ -93,6 +106,20 @@
     # drives detection-rule selection (Snort / Nuclei / YARA), NOT reachability.
     affectedRoutines: ($enrich.x_affectedRoutines // []),
     attackPaths: ($enrich.x_attackPaths // []),
+
+    # Deterministic tree-sitter reachability output from the CLI (`vulnetix
+    # vdb vuln <id> --reachability both|direct|transitive`). When present,
+    # this is authoritative — it is a real AST scan of the local project,
+    # not a heuristic. Fall back to `affectedRoutines` grep only when this
+    # block is absent or empty (--reachability=off, no v2 queries, or
+    # ecosystem/package unresolved).
+    reachability: ($reach | if . then {
+      queries_run: (.queries_run // 0),
+      direct: (.direct // []),
+      transitive: (.transitive // []),
+      skipped_direct: (.skipped_direct // null),
+      skipped_transitive: (.skipped_transitive // null)
+    } else null end),
 
     # Aggregated affected list across ALL containers (each container scopes a
     # different ecosystem). Cap at 200 entries to bound output size for CVEs
