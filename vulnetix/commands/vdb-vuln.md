@@ -13,7 +13,7 @@ Run this exact command and display the full output to the user:
 vulnetix vdb vuln $ARGUMENTS -o json
 ```
 
-Parse the JSON response and present a structured summary including: vulnerability ID and aliases, description, CVSS scores, EPSS probability, CISA KEV status, affected products and versions, and references.
+Parse the JSON response and present a structured summary including: vulnerability ID and aliases, description, CVSS scores, EPSS probability, CISA KEV status, affected products and versions, references, and — when the response carries `x_reachability` — a reachability summary (queries_run, direct/transitive match counts with file:line evidence). The tree-sitter reachability output is authoritative; fall back to manual `affectedRoutines` grep only when it is absent or `queries_run == 0`.
 
 ## Available Flags
 
@@ -22,6 +22,8 @@ The user can pass any of these flags as part of their arguments:
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
 | `-o, --output` | string | pretty | Output format: `json` or `pretty` |
+| `--reachability` | string | both | Tree-sitter AST reachability scan: `direct` (installed package only), `transitive` (rest of project), `both`, or `off`. Requires v2 (default). Produces deterministic file/line evidence under `x_reachability` (or `.reachability` after `_lib/jq/vuln.jq`) — prefer this over manual grep on `affectedRoutines`. |
+| `-V, --api-version` | string | v2 | VDB API version. Tree-sitter reachability requires `v2`. |
 
 ## Accepted Identifier Formats
 

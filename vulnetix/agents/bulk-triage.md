@@ -89,6 +89,7 @@ For each vulnerability, check if the affected package exists in the repository:
 1. Use **Glob** to find manifest files (`package.json`, `requirements.txt`, `go.mod`, etc.)
 2. Use **Grep** to search for the affected package name in manifests
 3. Determine: present (direct/transitive) or not found
+4. **Reachability — prefer the CLI tree-sitter scan, fall back to grep:** the `vulnetix vdb vuln <id> -o json` calls in Step 2 already run with the default `--reachability both` and surface a `.reachability` block via the shared jq filter. Read `.reachability.direct` / `.reachability.transitive` first — non-empty arrays mean the AST scan confirmed the vulnerable pattern in the installed package (direct) or in caller code (transitive). Only when `.reachability` is null, `queries_run == 0`, or a `skipped_*` reason is present should you fall back to `.affectedRoutines` grep for routine-level reachability. Record the resolved state as `reachable` / `unknown` / `not-reachable` so Step 4 can score Repo Relevance accurately.
 
 ### Step 4: Calculate priority
 

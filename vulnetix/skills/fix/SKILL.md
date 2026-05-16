@@ -213,13 +213,20 @@ vulnerabilities:
       privileges_required: none          # none | low | high
       user_interaction: none             # none | required
       reachability: direct               # direct | transitive | not-found | unknown
-                                         # Evidence sourced from `affectedRoutines` (see _lib/jq/vuln.jq):
+                                         # PRIMARY source (deterministic): the CLI's tree-sitter scan.
+                                         # `vulnetix vdb vuln <id> --reachability both` already runs by
+                                         # default; the shared jq filter exposes the result at
+                                         # `.reachability` (queries_run, direct[], transitive[]).
+                                         # Map: .direct non-empty → `direct`; .transitive non-empty (and
+                                         # .direct empty) → `transitive`; both empty with queries_run>0
+                                         # and no skipped_* reason → `not-found`.
+                                         # FALLBACK (only when .reachability is null, queries_run==0, or
+                                         # a skipped_* reason is present): grep on `affectedRoutines`:
                                          #   vulnetix vdb vuln <id> -o json \
                                          #     | jq -f $CLAUDE_PLUGIN_ROOT/skills/_lib/jq/vuln.jq \
                                          #     | jq -r '.affectedRoutines[] | select(.kind=="function") | .name' \
                                          #     | xargs -I{} git grep -nE '\b{}\b' src/
-                                         # If symbols match → `direct`; transitive-only manifest hit → `transitive`;
-                                         # routines absent from build → `not-found`; routines list empty → `unknown`.
+                                         # routines list empty AND CLI inconclusive → `unknown`.
       exposure: public-facing            # public-facing | internal | local-only | unknown
     cwss:                                # CWSS-derived priority (populated by /vulnetix:exploits)
       score: 87.5                        # 0-100 composite priority score
