@@ -1,0 +1,41 @@
+{
+  "skill_name": "detection-rules",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "We can't patch CVE-2021-44228 yet — give me Snort and YARA rules we can deploy in the meantime.",
+      "expected_output": "Rule files written to .vulnetix/detection/CVE-2021-44228/ with per-family rule counts, file paths, and copy-pasteable invocation hints.",
+      "expectations": [
+        "Reads .vulnetix/capabilities.yaml and captures derived.detection_stack to decide which families to fetch",
+        "Calls `vulnetix vdb snort-rules list --cve-id CVE-2021-44228 --format rules` writing to .vulnetix/detection/CVE-2021-44228/snort.rules",
+        "Calls `vulnetix vdb yara-rules list --cve-id CVE-2021-44228 --format rules` writing to .vulnetix/detection/CVE-2021-44228/vuln.yar",
+        "Renders rule count and highest signature severity per family with the on-disk file path",
+        "Appends `event: detection-rules` with per-family rule counts to .vulnetix/memory.yaml"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Build me a Nuclei template for CVE-2024-3094 so I can run it against our authorised staging environment.",
+      "expected_output": "A nuclei.yaml template saved to disk plus a copy-pasteable `nuclei -t ... -u <target>` invocation hint.",
+      "expectations": [
+        "Calls `vulnetix vdb nuclei get CVE-2024-3094 --format yaml` writing to .vulnetix/detection/CVE-2024-3094/nuclei.yaml",
+        "Emits the `nuclei -t .vulnetix/detection/CVE-2024-3094/nuclei.yaml -u <target>` invocation hint only if binaries.nuclei is true in capabilities.yaml",
+        "Explicitly states the skill writes the template but never executes it — user runs the engine",
+        "Skips Snort/YARA sections if those binaries are absent from derived.detection_stack",
+        "Updates .vulnetix/memory.yaml with `event: detection-rules` noting Nuclei template count"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "No detection tooling is installed locally but I still want the raw IDS rules for CVE-2023-46604 to hand to our SOC team.",
+      "expected_output": "After confirmation prompt, raw rules fetched for snort/yara/nuclei families and written to .vulnetix/detection/CVE-2023-46604/ without invocation hints.",
+      "expectations": [
+        "Detects empty derived.detection_stack and prompts the user whether to proceed with raw fetch",
+        "On user accept, treats the stack as [snort, yara, nuclei] for completeness",
+        "Calls `vulnetix vdb traffic-filters CVE-2023-46604` to pull Suricata-compatible Snort filters",
+        "Writes snort.rules, vuln.yar, and nuclei.yaml under .vulnetix/detection/CVE-2023-46604/",
+        "Omits binary-specific invocation hints (snort -c / yara / nuclei) because no binaries are installed"
+      ]
+    }
+  ]
+}

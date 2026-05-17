@@ -1,0 +1,27 @@
+{
+  "skill_name": "secure-code-write",
+  "should_trigger": [
+    "I'm about to write password reset logic — what should I watch for?",
+    "Coach me on safe deserialization before I touch src/jobs/queue.py.",
+    "What SAST rules would fire on a naive crypto wrapper? Show me the digest.",
+    "Pair-program a SQL query builder with me securely.",
+    "What CWEs and rules matter when I write file-upload handling in Go?",
+    "Give me the rule-grounded do's and don'ts for XSS in our React templates.",
+    "Junior dev is adding JWT validation — what rules should they see upfront?",
+    "Show me PASS/FAIL snippets for AES-GCM in Node before I implement it.",
+    "I want a coach output for template injection before writing the email renderer.",
+    "Before I add LDAP bind code, surface the relevant SAST rules and CWE intel."
+  ],
+  "should_not_trigger": [
+    "Actually scan src/auth/reset.ts for vulnerabilities. (should route to sast-scan)",
+    "Find leaked AWS keys in the repo. (should route to secret-scan)",
+    "Is lodash 4.17.20 vulnerable? (should route to vuln)",
+    "Generate a Nuclei template for CVE-2024-9999. (should route to detection-rules)",
+    "Build a SOC P1-P4 action list for today. (should route to soc-triage)",
+    "Verify my fix for GHSA-abcd-1234 worked. (should route to verify-fix)",
+    "Resolve the peer-dep conflict blocking the upgrade. (should route to dep-resolve)",
+    "Audit our Terraform for open S3 buckets. (should route to iac-scan)",
+    "Produce a weekly threat-intel digest. (should route to threat-feed)",
+    "Check if react-utill is a typosquat. (should route to typosquat-check)"
+  ]
+}

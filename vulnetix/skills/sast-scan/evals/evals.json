@@ -1,0 +1,41 @@
+{
+  "skill_name": "sast-scan",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Run SAST on the changes in my current feature branch before I open the PR.",
+      "expected_output": "A SARIF report written to .vulnetix/sast.<timestamp>.sarif covering files changed vs origin/main, rendered as a severity-grouped table.",
+      "expectations": [
+        "Determines scope as files changed since `git merge-base origin/main HEAD` when `--paths` is not provided",
+        "Runs `vulnetix sast --paths \"$PATHS\" -o json-sarif` and writes the report to `.vulnetix/sast.${TIMESTAMP}.sarif`",
+        "Renders findings table with columns Severity | Rule | File:Line | Message | Source, grouped from critical → low",
+        "Writes a `.vulnetix/sast/<branch>.summary.yaml` with finding counts so `/vulnetix:code-review-security` can consume it",
+        "Suggests `/vulnetix:secure-code-write` when the same rule fires repeatedly"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Did we just introduce an XXE pattern? Check rule VNX-XXE-001 against src/parsers/.",
+      "expected_output": "A targeted SAST run scoped to src/parsers/ filtering on the VNX-XXE-001 rule, with file:line hits or a clean-pass message.",
+      "expectations": [
+        "Passes `--rule-id VNX-XXE-001` through to the `vulnetix sast` invocation",
+        "Scopes the scan to `--paths src/parsers/` rather than the full branch diff",
+        "Produces SARIF output and renders the table sorted by severity",
+        "If no findings, returns a clean-pass message instead of an empty table",
+        "Does not silently invoke Semgrep unless both `binaries.semgrep: true` and `repo.semgrep_config: true` are present in `.vulnetix/capabilities.yaml`"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Augment Vulnetix SAST with our own .semgrep rules across the diff and give me one merged report.",
+      "expected_output": "A merged SARIF where Vulnetix findings and local Semgrep findings are de-duped by file:line:rule, with a Source column distinguishing the two engines.",
+      "expectations": [
+        "Reads `.vulnetix/capabilities.yaml` and verifies BOTH `binaries.semgrep: true` AND `repo.semgrep_config: true` before augmenting",
+        "Runs `semgrep --config .semgrep --json --quiet \"$PATHS\"` and writes to `.vulnetix/sast.semgrep.${TIMESTAMP}.json`",
+        "De-duplicates findings across both sources by the key `<file>:<line>:<rule_id>`",
+        "Adds a `Source` column to the rendered table distinguishing Vulnetix vs Semgrep origins",
+        "If either capability flag is false, silently runs Vulnetix rules only and notes it"
+      ]
+    }
+  ]
+}

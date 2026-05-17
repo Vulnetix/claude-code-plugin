@@ -1,0 +1,27 @@
+{
+  "skill_name": "container-scan",
+  "should_trigger": [
+    "Scan my Dockerfile for misconfigs",
+    "Audit registry.example.com/myapp:1.4 for CVEs",
+    "Check this Containerfile before I push to the registry",
+    "Is my base image EOL?",
+    "Build me an SBOM for the prod container image",
+    "Review the Dockerfile changes in this PR",
+    "Look at docker-compose.yml — are any of the services running as root?",
+    "Pre-build security check on my image",
+    "Hardening checklist for this Dockerfile",
+    "Scan the alpine:3.12 base image we're using"
+  ],
+  "should_not_trigger": [
+    "Run SAST on the Go source code (should route to sast-scan)",
+    "Scan my Terraform for open security groups (should route to iac-scan)",
+    "Check the Kubernetes manifests (should route to iac-scan)",
+    "Look up CVE-2024-3094 details (should route to vuln)",
+    "What's in memory.yaml? (should route to dashboard)",
+    "Run a full pre-merge security review on the PR (should route to code-review-security)",
+    "Generate a repo-level CycloneDX SBOM from the lockfiles (should route to sbom-generate)",
+    "Apply the fix for the CVE in my package.json (should route to fix)",
+    "Are my deps in CISA KEV? (should route to kev-watch)",
+    "Find weaponised CVEs in the Python ecosystem this month (should route to exploits-search)"
+  ]
+}

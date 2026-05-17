@@ -1,0 +1,41 @@
+{
+  "skill_name": "eol-check",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Audit this repo — are we running any past-EOL runtimes in production?",
+      "expected_output": "A table of runtimes/packages with installed version, EOL date, days past EOL, and recommended action.",
+      "expectations": [
+        "Reads .vulnetix/capabilities.yaml to determine primary_package_manager and whether a Dockerfile is present",
+        "Runs `vulnetix scan --block-eol -o json`, wrapping with `|| true` so the non-zero exit on hits doesn't abort capture",
+        "Cross-checks each detected runtime via `vulnetix vdb product <runtime>` for authoritative EOL dates",
+        "Renders a table with columns: Runtime/package, Installed, EOL date, Days past EOL, Action",
+        "Writes `event: eol-check` plus a top-level `runtimes` block to .vulnetix/memory.yaml when no vuln entry exists"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Run an eol-check in strict mode so I can plan upgrades for anything reaching EOL in the next quarter.",
+      "expected_output": "Past-EOL items plus items within 90 days of EOL flagged, with upgrade-target suggestions deferred to safe-version.",
+      "expectations": [
+        "Honours the --strict flag and flags items reaching EOL within 90 days in addition to past-EOL",
+        "Calls `vulnetix scan --block-eol -o json` and treats non-zero exit as a finding, not an error",
+        "Calls `vulnetix vdb product` for each runtime (node, python, java, golang, dotnet) to confirm EOL date",
+        "Notes that the skill flags EOL but does not propose upgrade paths — points the user at `/vulnetix:safe-version`",
+        "Appends `event: eol-check` to .vulnetix/memory.yaml capturing the EOL items"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Our Dockerfile bases off alpine 3.16 — is that still supported, and are any other base images past EOL?",
+      "expected_output": "Per-base-image EOL findings with EOL date and days past, gated on the Dockerfile being present in the repo.",
+      "expectations": [
+        "Confirms repo.dockerfile is true in .vulnetix/capabilities.yaml before scanning base images",
+        "Runs `vulnetix scan --block-eol -o json` which inspects FROM lines in the Dockerfile/Containerfile",
+        "Resolves alpine 3.16 EOL date via `vulnetix vdb product alpine`",
+        "Renders the EOL table with the base image as a row, including days past EOL",
+        "Notes the skill cannot scan a `--image` registry tag without a Dockerfile in the repo"
+      ]
+    }
+  ]
+}

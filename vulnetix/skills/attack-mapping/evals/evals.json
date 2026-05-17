@@ -1,0 +1,41 @@
+{
+  "skill_name": "attack-mapping",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "For CVE-2021-44228, which MITRE ATT&CK techniques does this actually enable? I need to know if it's Initial Access or Execution territory.",
+      "expected_output": "A focused single-vuln ATT&CK technique mapping with tactic, technique IDs, and a kill-chain flowchart.",
+      "expectations": [
+        "`vulnetix vdb attack-techniques get CVE-2021-44228 -o /dev/stdout` is invoked (not the bare form)",
+        "Output is piped through the `_lib/jq/attack-techniques.jq` filter",
+        "Output includes a table with columns Technique, Tactic, and observation count",
+        "A Mermaid flowchart from kill-chain tactic to technique to vuln is rendered",
+        "Memory.yaml entry for CVE-2021-44228 is appended with `event: attack-mapping` plus the technique IDs"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Can you roll up every CVE we're still tracking and show me which ATT&CK tactics dominate this repo's risk profile? Want an executive heatmap.",
+      "expected_output": "A roll-up heatmap table aggregating ATT&CK techniques across every actively-tracked memory.yaml entry, ranked by vuln count.",
+      "expectations": [
+        "Skill runs in `--all-tracked` mode reading `.vulnetix/memory.yaml`",
+        "Entries with `status: not_affected` or `status: fixed` are skipped",
+        "`vulnetix vdb attack-techniques get <id>` is invoked once per remaining tracked vuln",
+        "Output is a heatmap table with columns Technique, Tactic, Vuln count, Top affected packages",
+        "Table is sorted by vuln count descending and capped at top 20 with a summary footer"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I'm planning a purple-team exercise — can you correlate CVE-2023-44487 and CVE-2024-3094 to a shared technique chain?",
+      "expected_output": "ATT&CK technique mapping for both CVEs identifying shared techniques and a chained tactic flow.",
+      "expectations": [
+        "`vulnetix vdb attack-techniques get CVE-2023-44487` and `vulnetix vdb attack-techniques get CVE-2024-3094` are invoked in parallel",
+        "Output captures technique IDs in T#### format with tactic and sub-technique",
+        "A shared technique chain (e.g. T1190 + T1059) is highlighted if present",
+        "Suggested follow-up references `/vulnetix:detection-rules <id>` for high-frequency techniques",
+        "Memory.yaml entries for both CVEs gain an `event: attack-mapping` entry with technique IDs"
+      ]
+    }
+  ]
+}

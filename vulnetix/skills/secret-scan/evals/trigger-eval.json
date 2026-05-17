@@ -1,0 +1,27 @@
+{
+  "skill_name": "secret-scan",
+  "should_trigger": [
+    "Check my staged files for any leaked API keys before I commit.",
+    "Run a credential scan across the whole repo — I think an AWS key got committed.",
+    "Detect secrets in src/config.ts and deploy/env.sh.",
+    "Pre-commit hook is screaming, can you secret scan the staged diff?",
+    "Audit the repo for leaked GitHub PATs and Slack tokens.",
+    "Produce a rotation list of provider keys I need to revoke right now.",
+    "Block the merge if there's a high-confidence secret in this PR's diff.",
+    "An ex-employee may have pushed credentials — full-repo secret sweep please.",
+    "Is there a Stripe key hardcoded anywhere in this codebase?",
+    "Scan everything I just git-add'd for hardcoded secrets."
+  ],
+  "should_not_trigger": [
+    "Find SQL injection bugs in our login flow. (should route to sast-scan)",
+    "Generate a CycloneDX SBOM for the release artefact. (should route to sbom-generate)",
+    "Is CVE-2024-12345 actually exploited in the wild? (should route to exploits)",
+    "Pick a safe version of lodash to upgrade to. (should route to safe-version)",
+    "Review the open security groups in our Terraform. (should route to iac-scan)",
+    "Confirm the fix for GHSA-xxxx landed cleanly. (should route to verify-fix)",
+    "Which of our installed deps are KEV-listed today? (should route to kev-watch)",
+    "Build a daily SOC P1-P4 action list. (should route to soc-triage)",
+    "Coach me on writing safe deserialization code. (should route to secure-code-write)",
+    "Is react-utill a typosquat of react-util? (should route to typosquat-check)"
+  ]
+}

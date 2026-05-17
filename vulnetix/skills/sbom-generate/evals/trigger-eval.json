@@ -1,0 +1,27 @@
+{
+  "skill_name": "sbom-generate",
+  "should_trigger": [
+    "Generate an SBOM for the repo",
+    "Produce a CycloneDX SBOM for our release",
+    "I need an SPDX SBOM for compliance",
+    "Build both CycloneDX and SPDX SBOMs",
+    "Sign our SBOM with cosign for supply-chain attestation",
+    "Cross-validate our SBOM against syft",
+    "Attach an SBOM to today's GitHub release",
+    "Generate an SBOM with VEX embedded",
+    "SOC 2 audit needs an SBOM today",
+    "Submit our SBOM to the NTIA registry"
+  ],
+  "should_not_trigger": [
+    "Just check our licenses (should route to license-check)",
+    "Build a full compliance bundle with SARIF and VEX (should route to compliance-report)",
+    "Generate an SBOM for a container image (should route to container-scan)",
+    "Publish a VEX attestation (should route to vex-publish)",
+    "Scan the repo for CVEs (should route to vuln)",
+    "Run SAST on the changed files (should route to sast-scan)",
+    "Find the safe version of express (should route to safe-version)",
+    "Apply a fix for CVE-2021-44228 (should route to fix)",
+    "Vet a new dependency before npm install (should route to package-search)",
+    "Detect EOL runtimes in our project (should route to eol-check)"
+  ]
+}

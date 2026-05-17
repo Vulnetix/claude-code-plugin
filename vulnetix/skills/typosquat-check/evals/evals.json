@@ -1,0 +1,41 @@
+{
+  "skill_name": "typosquat-check",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Just inherited this repo — sweep every installed dep for typosquat or malware family hits before I touch anything.",
+      "expected_output": "Lockfile-driven `--installed` mode, parallel `vulnetix scan --block-malware` + `vdb ai-malware list` calls, ALLOW/WARN/BLOCK table per direct dep, and a memory append plus history-review note for any BLOCK.",
+      "expectations": [
+        "Reads .vulnetix/capabilities.yaml and uses derived.primary_package_manager to select the correct lockfile to enumerate direct deps from",
+        "Runs `vulnetix scan --block-malware -o json` and `vulnetix vdb ai-malware list -o json | jq -f ${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/ai-list.jq` to fetch AI-malware family intel",
+        "Renders a table with columns Package, Version, Verdict (ALLOW/WARN/BLOCK), Reason citing similarity score, stars, age, or AI-malware family match",
+        "For any BLOCK verdict suggests `git log -p -- <package-manifest-path>` before removal and notes that removing is destructive",
+        "Appends a single consolidated `event: typosquat-check` entry to .vulnetix/memory.yaml with the verdicts"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Someone PR'd a dep called `react-utill` — is that a typosquat of react-util or legitimate?",
+      "expected_output": "Single-package mode: `vulnetix vdb packages search react-utill --ecosystem npm` for similarity scores plus an ai-malware lookup, rendered as a one-row ALLOW/WARN/BLOCK verdict with similarity reasoning.",
+      "expectations": [
+        "Treats $ARGUMENTS=react-utill as single-package mode (does not enumerate lockfile)",
+        "Runs `vulnetix vdb packages search react-utill --ecosystem npm -o json` piped through skills/_lib/jq/packages.jq for similarity hits",
+        "Also runs `vulnetix scan --block-malware -o json` and `vulnetix vdb ai-malware list -o json` (filtered by package/ecosystem) in parallel",
+        "Renders a one-row verdict table citing the Levenshtein similarity score against react-util plus maintainer-health signals (stars, age) in the Reason column",
+        "Appends an `event: typosquat-check` entry with the verdict to memory.yaml and notes false-positive risk for legitimate near-name packages"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "A new AI-malware family was disclosed — cross-reference our installed Python deps against it and flag anything we should pull.",
+      "expected_output": "`--installed` mode against requirements/poetry lockfile, parallel scan + ai-malware lookup with --ecosystem pypi, ALLOW/WARN/BLOCK table, urgent flagging on BLOCKs, memory append.",
+      "expectations": [
+        "Reads .vulnetix/capabilities.yaml and confirms primary_package_manager is pypi/poetry before iterating the lockfile",
+        "Runs `vulnetix scan --block-malware -o json` and `vulnetix vdb ai-malware list -o json --ecosystem pypi | jq -f ${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/ai-list.jq` in parallel",
+        "For each installed direct dep cross-references the AI-malware family list and the typosquat-similarity scores from `vdb packages search`",
+        "Renders the Package / Version / Verdict / Reason table and treats any BLOCK as urgent with a strong removal recommendation plus `git log -p -- <manifest>` history review",
+        "Writes a single consolidated `event: typosquat-check` entry to .vulnetix/memory.yaml capturing each verdict"
+      ]
+    }
+  ]
+}

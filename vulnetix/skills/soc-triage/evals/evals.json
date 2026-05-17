@@ -1,0 +1,41 @@
+{
+  "skill_name": "soc-triage",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Starting my SOC shift — what vulnerabilities landed overnight that actually hit our installed packages?",
+      "expected_output": "A `vulnetix vdb triage` pull cross-referenced with lockfiles via Grep, rendered as a P1–P4 markdown table with In repo? column and per-row suggested actions, plus a consolidated memory append.",
+      "expectations": [
+        "Reads .vulnetix/capabilities.yaml and uses derived.primary_package_manager to pick the ecosystem filter and the lockfile path",
+        "Runs `vulnetix vdb triage --limit 50 -o json | jq -f ${CLAUDE_PLUGIN_ROOT}/skills/_lib/jq/triage.jq` (or honors user-supplied flags) to fetch the score-driven feed",
+        "Uses Grep on the lockfile (matched by derived.primary_package_manager) to mark each item's In repo? as direct, transitive, or not-found, and cross-references .vulnetix/memory.yaml for prior decisions",
+        "Renders a markdown table grouped P1 / P2 / P3 / P4 with columns ID, Package, Severity, EPSS, KEV, In repo?, Action, mapping direct+KEV to `/vulnetix:fix <id>` and transitive to safe-harbor-resolver",
+        "Appends a single consolidated `event: soc-triage` entry to .vulnetix/memory.yaml with status: under_investigation for newly surfaced items, using --disable-memory on inner CLI calls"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Give me only the KEV-listed criticals that hit our npm deps from the last 7 days, capped at 20 items.",
+      "expected_output": "Triage pull with `--in-kev --severity critical --since <date> --limit 20 --ecosystem npm` passed through, cross-referenced with package-lock.json, rendered as the P1–P4 table.",
+      "expectations": [
+        "Passes the user flags through to `vulnetix vdb triage --in-kev --severity critical --since <YYYY-MM-DD> --limit 20 --ecosystem npm -o json` (server-side filtering, not client-side)",
+        "Pipes the response through skills/_lib/jq/triage.jq rather than printing the raw 4MB+ payload",
+        "Greps package-lock.json (or npm-shrinkwrap.json) to classify In repo? for each returned CVE",
+        "Renders only items the user asked for in the P1/P2 tiers (critical+KEV) without padding from lower severity",
+        "Writes a single `event: soc-triage` consolidated memory entry and warns about parallel /vulnetix:soc-triage invocations"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Produce a handoff watchlist for the next shift — the top 10 EPSS > 0.5 items intersected with what we actually run.",
+      "expected_output": "Triage feed via `--min-epss 0.5 --limit 10`, repo-impact cross-reference, ranked P1–P4 table with handoff-flavoured actions, plus a memory append.",
+      "expectations": [
+        "Calls `vulnetix vdb triage --min-epss 0.5 --limit 10 -o json` and pipes through the triage.jq filter",
+        "Cross-references each item's package against the lockfile selected by derived.primary_package_manager and marks In repo? direct/transitive/not-found",
+        "Renders the standard markdown table with EPSS and KEV columns visible so the next shift can re-prioritize",
+        "Suggests `/vulnetix:detection-rules <id>` only when derived.detection_stack contains at least one of snort, suricata, yara, nuclei",
+        "Appends one consolidated `event: soc-triage` history entry with status under_investigation for newly surfaced vulns and skips items already decided P3/P4 in memory.yaml"
+      ]
+    }
+  ]
+}

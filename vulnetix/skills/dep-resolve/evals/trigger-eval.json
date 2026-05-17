@@ -1,0 +1,27 @@
+{
+  "skill_name": "dep-resolve",
+  "should_trigger": [
+    "npm install blew up with ERESOLVE after the fix bumped webpack",
+    "I can't upgrade typescript past 4.9 because of a peer-dep on ts-node",
+    "How do I pin a vulnerable transitive without bumping the parent?",
+    "Need a pnpm override for the lodash version inside express",
+    "Yarn resolutions for tough-cookie — what's the syntax?",
+    "Our lockfile won't resolve after merging main — diagnose the conflict",
+    "Cargo refuses to bump openssl-sys because of the transitive constraint",
+    "Go module replace directive for a vulnerable indirect dep",
+    "The fix skill bumped axios but the install is failing — figure out a path",
+    "Can we override the nested semver version without touching @babel/core?"
+  ],
+  "should_not_trigger": [
+    "What's the newest safe version of express? (should route to safe-version)",
+    "Apply a fix for CVE-2023-12345 (should route to fix)",
+    "Vet this new dep before I install it (should route to dep-add-guard)",
+    "Run a SAST scan on the diff (should route to sast-scan)",
+    "Look up GHSA-jfh8-c2jp-5v3q (should route to vuln)",
+    "Show me actively exploited CVEs in npm (should route to exploits-search)",
+    "Generate Snort rules for CVE-2024-1234 (should route to detection-rules)",
+    "What does our dependency runtime EOL look like? (should route to eol-check)",
+    "Audit licenses for copyleft conflicts (should route to license-check)",
+    "Did our fix actually land — verify it (should route to verify-fix)"
+  ]
+}

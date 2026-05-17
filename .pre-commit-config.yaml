@@ -1,0 +1,6 @@
+repos:
+  - repo: https://github.com/agent-ecosystem/skill-validator
+    rev: v0.5.0
+    hooks:
+      - id: skill-validator
+        args: ["check", "--strict", "--allow-dirs=evals", "vulnetix/skills/"]

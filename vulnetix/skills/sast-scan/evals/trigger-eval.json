@@ -1,0 +1,27 @@
+{
+  "skill_name": "sast-scan",
+  "should_trigger": [
+    "Run SAST on my branch diff",
+    "Static analysis on this feature branch",
+    "Scan source files for code-level vulnerabilities",
+    "Check for XXE patterns with rule VNX-XXE-001",
+    "Gate the PR on critical SAST findings",
+    "Audit src/auth for CWE-89 patterns",
+    "Augment my Semgrep rules with Vulnetix SAST",
+    "Static scan the changed files before merge",
+    "Run sast-scan with --rule-id VNX-CWE-79-001",
+    "Find injection sinks in the recently changed Go files"
+  ],
+  "should_not_trigger": [
+    "Scan our deps for known CVEs (should route to vuln)",
+    "Find hardcoded secrets in the repo (should route to secret-scan)",
+    "Scan our Dockerfile for misconfig (should route to container-scan)",
+    "Check our Terraform IaC (should route to iac-scan)",
+    "Generate a CycloneDX SBOM (should route to sbom-generate)",
+    "Build a license compliance report (should route to license-check)",
+    "Find the safe version of express (should route to safe-version)",
+    "Triage CVE-2024-XXXX (should route to vuln)",
+    "Run a full pre-merge security review (should route to code-review-security)",
+    "Verify my fix actually closed the vuln path (should route to verify-fix)"
+  ]
+}

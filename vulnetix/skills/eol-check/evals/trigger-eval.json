@@ -1,0 +1,27 @@
+{
+  "skill_name": "eol-check",
+  "should_trigger": [
+    "Are any of our runtimes past end-of-life?",
+    "Check if Node 16 is still supported in this repo",
+    "What's reaching EOL in the next 90 days here?",
+    "Quarterly upgrade plan — which runtimes are unsupported?",
+    "Is python 3.7 EOL? We still ship it",
+    "Is alpine 3.16 still supported as our base image?",
+    "Gate our deploy on no EOL runtimes — run that check",
+    "Audit for outdated runtime versions",
+    "Cross-reference EOL with unpatched CVEs",
+    "Run eol-check --strict for me"
+  ],
+  "should_not_trigger": [
+    "Scan the repo for CVEs (should route to soc-triage)",
+    "License audit for copyleft conflicts (should route to license-check)",
+    "Find me the newest safe version of node (should route to safe-version)",
+    "Apply a fix for CVE-2023-12345 (should route to fix)",
+    "Generate an SBOM for compliance (should route to sbom-generate)",
+    "Vet a new dep before npm install (should route to dep-add-guard)",
+    "Resolve this peer-dep conflict (should route to dep-resolve)",
+    "Snort rules for our unpatched vuln (should route to detection-rules)",
+    "Scan the Dockerfile for misconfigs (should route to container-scan)",
+    "Map our top CVEs to MITRE ATT&CK (should route to attack-mapping)"
+  ]
+}

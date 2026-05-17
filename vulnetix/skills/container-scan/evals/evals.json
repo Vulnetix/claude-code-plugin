@@ -1,0 +1,41 @@
+{
+  "skill_name": "container-scan",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Scan my Dockerfile before I build — looking for misconfig and base-image CVEs.",
+      "expected_output": "A Vulnetix container analysis of the Dockerfile with findings on base-image risk, EOL bases, exposed secrets, missing USER, root processes, healthchecks, and vulnerable system packages.",
+      "expectations": [
+        "`.vulnetix/capabilities.yaml` is read for `binaries.{docker,podman,trivy,grype,syft}` and `repo.{dockerfile,containerfile,compose}`",
+        "`vulnetix containers --paths $DOCKERFILE_PATHS -o json > .vulnetix/containers.${TIMESTAMP}.json` is invoked",
+        "Findings table includes columns Severity, Source, Issue, File / Layer, Fix",
+        "A Hardening checklist section covers USER directive, healthcheck, pinned versions, layer minimisation",
+        "Summary is written to `.vulnetix/containers/<timestamp>.summary.yaml` with finding counts by severity"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Audit registry.example.com/myapp:1.4 for installed-package CVEs using whatever scanners I have available.",
+      "expected_output": "A composed scan against the registry image using Trivy/Grype when present, with results merged into a unified de-duped table.",
+      "expectations": [
+        "Skill is invoked with `--image registry.example.com/myapp:1.4`",
+        "`trivy image registry.example.com/myapp:1.4 --format json` is invoked when `binaries.trivy: true`",
+        "`grype registry.example.com/myapp:1.4 -o json` is invoked when `binaries.grype: true`",
+        "Findings are merged into a unified table and de-duplicated by CVE + package",
+        "Skill aborts with a one-liner if no container artifacts are found AND no `--image` argument is passed"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Build a CycloneDX SBOM for our prod image plus a CVE list.",
+      "expected_output": "Syft-generated CycloneDX JSON SBOM alongside a Vulnetix/Trivy CVE table for the same image.",
+      "expectations": [
+        "`syft $IMAGE -o cyclonedx-json > .vulnetix/containers/${IMAGE//[\\/:]/_}.cdx.json` is invoked when `binaries.syft: true`",
+        "`vulnetix scan --enable-containers` or `vulnetix containers` is invoked for the Vulnetix layer",
+        "Output table includes a Fix column with concrete remediation (e.g. base-image bump)",
+        "EOL base-image status is sourced from `vulnetix vdb product`",
+        "Findings are split per service-name when the input is a docker-compose.yml"
+      ]
+    }
+  ]
+}

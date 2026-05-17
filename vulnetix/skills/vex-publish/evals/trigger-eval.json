@@ -1,0 +1,27 @@
+{
+  "skill_name": "vex-publish",
+  "should_trigger": [
+    "Generate an OpenVEX attestation from our triage decisions",
+    "Publish VEX statements for the supply-chain consumers",
+    "Build a CycloneDX VEX document from .vulnetix/memory.yaml",
+    "A customer needs an OpenVEX attestation for the latest delivery",
+    "Attach VEX status as a comment on this PR",
+    "Sign the VEX document with cosign and upload it to Vulnetix",
+    "I need the durable record of what was decided — produce VEX output",
+    "Render an attestation showing not_affected and fixed entries",
+    "Post the VEX summary to PR 482 so reviewers can see dispositions",
+    "Convert our memory.yaml decisions into a VEX file under .vulnetix/vex/"
+  ],
+  "should_not_trigger": [
+    "Apply the fix for CVE-2024-1234 to package.json (should route to fix)",
+    "Run a SAST scan over the changed files (should route to sast-scan)",
+    "Generate a CycloneDX SBOM for this repo (should route to sbom-generate)",
+    "Triage CVE-2021-44228 — should we be worried? (should route to vuln)",
+    "Find exploits in the wild for this CVE (should route to exploits)",
+    "Check our dependencies against CISA KEV (should route to kev-watch)",
+    "Build the full compliance bundle for SOC 2 (should route to compliance-report)",
+    "Audit for hardcoded secrets in the repo (should route to secret-scan)",
+    "Scan our Dockerfile for misconfigurations (should route to container-scan)",
+    "Find a safe non-vulnerable version of lodash to pin (should route to safe-version)"
+  ]
+}

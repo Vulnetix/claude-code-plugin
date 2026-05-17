@@ -1,0 +1,27 @@
+{
+  "skill_name": "verify-fix",
+  "should_trigger": [
+    "Confirm my fix for GHSA-jf85-cpcp-j695 actually landed.",
+    "Did the lodash bump close CVE-2023-26136?",
+    "Verify the fix worked — exploit should be gone now.",
+    "I bumped the package, validate it's outside the affected range.",
+    "Pre-release: make sure all triaged P1/P2 vulns are resolved.",
+    "Run the gated weaponized+high scan to confirm a clean state.",
+    "Flip the memory.yaml status from under_investigation to fixed for this CVE.",
+    "Produce a clean-scan attestation for the compliance bundle.",
+    "Check whether my peer-dep upgrade introduced regressions.",
+    "Re-scan after the patch — PASS or FAIL?"
+  ],
+  "should_not_trigger": [
+    "Apply the fix in the first place. (should route to fix)",
+    "Build today's SOC triage queue. (should route to soc-triage)",
+    "Resolve the peer-dep conflict blocking my upgrade. (should route to dep-resolve)",
+    "Generate the VEX attestation after I confirm. (should route to vex-publish)",
+    "Find a safe upgrade target for express. (should route to safe-version)",
+    "Deep-dive CVE-2024-3094. (should route to vuln)",
+    "Scan changed files for SAST issues. (should route to sast-scan)",
+    "Audit installed deps for typosquats. (should route to typosquat-check)",
+    "Generate an SBOM after the fix lands. (should route to sbom-generate)",
+    "Build IOC pivots for this hot CVE. (should route to ioc-pivot)"
+  ]
+}

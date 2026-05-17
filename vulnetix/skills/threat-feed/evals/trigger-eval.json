@@ -1,0 +1,27 @@
+{
+  "skill_name": "threat-feed",
+  "should_trigger": [
+    "Build the weekly threat-intel digest for the team.",
+    "What AI-discovered vulns landed in the last 7 days?",
+    "Track AI-authored malware families relevant to npm.",
+    "Show me month-over-month CVE deltas across the top vendors.",
+    "I need an exploit-trends rollup for the security newsletter.",
+    "Scan for novel threats since last Wednesday.",
+    "Monitor vendor=cisco for rising CVE counts this month.",
+    "Give me the in-the-wild observations from the AI corpus.",
+    "Daily threat-intel digest — keep it compact.",
+    "What's trending in the AI researcher leaderboard this week?"
+  ],
+  "should_not_trigger": [
+    "Triage today's queue against our installed deps. (should route to soc-triage)",
+    "Which of our deps are in CISA KEV? (should route to kev-watch)",
+    "Deep-dive CVE-2024-1234. (should route to vuln)",
+    "Find weaponized exploits for log4j. (should route to exploits)",
+    "Generate Nuclei templates for this CVE. (should route to detection-rules)",
+    "Pivot IOCs for CVE-2024-7777. (should route to ioc-pivot)",
+    "Scan changed Python files for SAST issues. (should route to sast-scan)",
+    "Confirm my upgrade closed the vuln. (should route to verify-fix)",
+    "Is left-pad-helper a typosquat? (should route to typosquat-check)",
+    "Audit Dockerfile for base-image risk. (should route to container-scan)"
+  ]
+}

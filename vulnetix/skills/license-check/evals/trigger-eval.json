@@ -1,0 +1,27 @@
+{
+  "skill_name": "license-check",
+  "should_trigger": [
+    "Check our deps for copyleft contamination before release",
+    "Are there any GPL or AGPL packages in our node_modules?",
+    "Run a license policy check with the strict allowlist",
+    "I need an SPDX license report for our compliance team",
+    "Vet this new dep's license before I add it",
+    "Build an OSS attribution / NOTICE file for the project",
+    "Do a quarterly license compliance review",
+    "Find any SSPL-licensed packages in our dependencies",
+    "Produce a customer-facing license disclosure document",
+    "Check if our MIT product accidentally pulled in LGPL code"
+  ],
+  "should_not_trigger": [
+    "Scan our deps for known CVEs (should route to vuln)",
+    "Show the license text for the lodash package (should route to package manager directly)",
+    "Generate a full CycloneDX SBOM with components (should route to sbom-generate)",
+    "Build a compliance bundle with SBOM, VEX, and SARIF (should route to compliance-report)",
+    "Find the safe upgrade target for express (should route to safe-version)",
+    "Review this PR for security issues (should route to code-review-security)",
+    "Scan our Dockerfile base image (should route to container-scan)",
+    "Detect hardcoded secrets in our repo (should route to secret-scan)",
+    "Triage CVE-2021-44228 (should route to vuln)",
+    "Generate a VEX attestation for our triage decisions (should route to vex-publish)"
+  ]
+}

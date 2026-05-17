@@ -1,0 +1,27 @@
+{
+  "skill_name": "compliance-report",
+  "should_trigger": [
+    "Build a SOC 2 evidence bundle for this repo",
+    "Assemble an audit bundle with SBOM, SARIF, and VEX",
+    "Produce a signed compliance package for v3.2",
+    "Customer wants an SBOM plus signed attestations",
+    "Generate the quarterly compliance archive",
+    "Put together our supply-chain compliance package",
+    "I need ISO 27001 evidence artefacts",
+    "Pre-release: assemble all the security artefacts that ship with the release",
+    "FedRAMP attestation bundle please",
+    "Bundle CycloneDX + SPDX + SARIF + VEX into one delivery"
+  ],
+  "should_not_trigger": [
+    "Just give me an SBOM (should route to sbom-generate)",
+    "Publish a VEX for a single CVE (should route to vex-publish)",
+    "Run SAST and give me SARIF only (should route to sast-scan)",
+    "Audit my licenses for AGPL contamination (should route to license-check)",
+    "Scan my Dockerfile (should route to container-scan)",
+    "Show me what's tracked in memory.yaml (should route to dashboard)",
+    "Apply the fix for CVE-2024-1234 (should route to fix)",
+    "Pre-merge security review on PR 482 (should route to code-review-security)",
+    "Check installed deps against KEV (should route to kev-watch)",
+    "Detect what scanners I have installed (should route to capabilities-detect)"
+  ]
+}

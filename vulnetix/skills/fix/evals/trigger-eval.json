@@ -1,0 +1,27 @@
+{
+  "skill_name": "fix",
+  "should_trigger": [
+    "Apply the fix for CVE-2021-44228 in our pom.xml",
+    "Patch GHSA-jfh8-c2jp-5v3q and regenerate the lockfile",
+    "Remediate CVE-2022-22965 in our Spring service",
+    "Bump log4j-core to a safe version and produce an SBOM",
+    "I need a concrete remediation plan for CVE-2024-3094, not just 'upgrade'",
+    "Can you inline this dep as first-party code instead of upgrading?",
+    "Fix this vuln and run a dry-run to verify the lockfile still resolves",
+    "Update package.json for the express CVE and back up the lockfile first",
+    "Roll out the registry patch for CVE-2023-44487 across our manifests",
+    "What's the patched version of log4j and apply it"
+  ],
+  "should_not_trigger": [
+    "Tell me what CVE-2021-44228 actually is (should route to vuln)",
+    "Did the upgrade actually land on the branch? (should route to verify-fix)",
+    "Resolve this peer-dep conflict blocking the upgrade (should route to dep-resolve)",
+    "Build me a multi-CVE upgrade plan across the repo (should route to soc-triage)",
+    "Generate Snort rules for this CVE (should route to detection-rules)",
+    "Publish the VEX attestation now (should route to vex-publish)",
+    "Find a vuln-free version with at most one major bump (should route to safe-version)",
+    "Investigate IOCs and ASNs for this active CVE (should route to ioc-pivot)",
+    "Scan my Dockerfile for misconfig (should route to container-scan)",
+    "Run a SAST pass on the changed files (should route to sast-scan)"
+  ]
+}

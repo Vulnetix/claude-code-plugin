@@ -1,0 +1,27 @@
+{
+  "skill_name": "typosquat-check",
+  "should_trigger": [
+    "Is react-utill a typosquat of react-util?",
+    "Sweep installed deps for malicious packages.",
+    "Audit this newly-onboarded repo for supply-chain name-similarity attacks.",
+    "Block the CI build if any installed dep is flagged as malware.",
+    "Vendor advisory mentioned name-similarity — cross-reference our deps.",
+    "Check if lodash-utility looks malicious.",
+    "Scan all direct deps against the AI-malware family list.",
+    "Post-incident review: any installed package match the new malware family?",
+    "Is `colorss` a typosquat of colors?",
+    "Run a typo-squatting check across our package-lock.json."
+  ],
+  "should_not_trigger": [
+    "Is lodash 4.17.20 CVE-affected? (should route to vuln)",
+    "Should I add this new dep — give me a full risk gate. (should route to dep-add-guard)",
+    "Find a safe version of express to upgrade to. (should route to safe-version)",
+    "Resolve the peer-dep conflict from the upgrade. (should route to dep-resolve)",
+    "Apply a fix for GHSA-vvvv. (should route to fix)",
+    "Confirm the fix landed. (should route to verify-fix)",
+    "Generate an SBOM for this release. (should route to sbom-generate)",
+    "Daily SOC triage queue please. (should route to soc-triage)",
+    "Audit the repo for leaked secrets. (should route to secret-scan)",
+    "Check our package licenses for GPL contamination. (should route to license-check)"
+  ]
+}

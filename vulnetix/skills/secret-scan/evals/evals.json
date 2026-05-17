@@ -1,0 +1,41 @@
+{
+  "skill_name": "secret-scan",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I'm about to run git commit on a batch of staged files for the auth service — make sure no API keys or tokens slipped into the diff before I push.",
+      "expected_output": "A scan of only staged files via `vulnetix secrets --staged-only -o json`, a redacted findings table grouped by type with confidence levels, and a written summary at .vulnetix/secrets/<timestamp>.summary.yaml.",
+      "expectations": [
+        "Reads .vulnetix/capabilities.yaml and confirms binaries.git is present before invoking --staged-only",
+        "Runs `vulnetix secrets --staged-only -o json` (or `vulnetix scan --evaluate-secrets`) producing JSON written to .vulnetix/secrets.<timestamp>.json",
+        "Resolves the staged file list with `git diff --cached --name-only` rather than scanning the full repo",
+        "Renders a table with columns Type, File:Line, Snippet (redacted), Confidence and redacts ~60% of every detected secret value",
+        "Writes a sanitized summary record to .vulnetix/secrets/<timestamp>.summary.yaml containing counts by type and file paths but no raw secret values"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "We just got a customer report that an AWS access key showed up in our public repo — do a full repo audit and produce a rotation list for whatever leaked.",
+      "expected_output": "Full-repo `vulnetix secrets` run, a high-confidence findings table (AWS/GitHub PAT/Slack/Stripe), per-provider rotation/revocation guidance, and history-rewrite warnings for committed leaks.",
+      "expectations": [
+        "Runs `vulnetix secrets -o json` against the whole repo (no --staged-only, no --paths narrowing) and captures JSON output",
+        "Separates high-confidence matches (AWS / GitHub PAT / Slack / Stripe regex hits) from medium-confidence generic high-entropy strings in the rendered table",
+        "Emits per-provider rotation/revocation steps (e.g. AWS IAM key rotation, GitHub PAT revoke, Slack token rotate, Stripe key roll) keyed on each unique secret type found",
+        "For secrets in committed files (not just working tree) recommends `git filter-repo` or BFG repo-cleaner and strongly advises rotation since the value is in git history",
+        "Never prints the un-redacted secret value anywhere in the response (every snippet shows ~60% replaced with `*`)"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Scan only the three files I just touched — src/config.ts, src/db.ts, deploy/env.sh — and tell me if anything in there will trip our CI secret gate.",
+      "expected_output": "Path-scoped scan via `vulnetix secrets --paths`, redacted findings on those three files, a CI-gate verdict driven by high-confidence matches, and a sanitized memory summary.",
+      "expectations": [
+        "Calls `vulnetix secrets --paths src/config.ts src/db.ts deploy/env.sh -o json` (or equivalent `vulnetix scan --evaluate-secrets --paths ...`) and does not scan files outside that list",
+        "Renders the standard Type / File:Line / Snippet (redacted) / Confidence table scoped to those three paths",
+        "Calls out whether any finding is high-confidence (AWS/GitHub PAT/Slack/Stripe) versus medium-confidence high-entropy so the CI gate decision is explicit",
+        "Mentions inline suppression via `# pix-ignore-secret` on the next line for any legitimate false positive rather than removing the detector",
+        "Appends a sanitized record to .vulnetix/secrets/<timestamp>.summary.yaml (counts by type and file paths, no values) as a single consolidated memory write"
+      ]
+    }
+  ]
+}
