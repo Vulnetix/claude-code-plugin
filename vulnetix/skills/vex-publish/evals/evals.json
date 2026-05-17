@@ -1,0 +1,41 @@
+{
+  "skill_name": "vex-publish",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Our triage cycle wrapped up this morning — please turn every decision in .vulnetix/memory.yaml into an OpenVEX document we can hand to the auditor.",
+      "expected_output": "An OpenVEX JSON file written under .vulnetix/vex/<timestamp>.vex.json containing one statement per non-investigating memory entry, with a summary table of counts per VEX status and the local file path.",
+      "expectations": [
+        "Reads .vulnetix/memory.yaml and filters to entries whose decision.choice is not 'investigating'",
+        "Runs `vulnetix triage --provider vulnetix --vex-format openvex -o json` and writes the result under .vulnetix/vex/<timestamp>.vex.json",
+        "Maps decision.choice → VEX status using the closed dict (not-affected/risk-avoided→not_affected, fix-applied→fixed, risk-accepted/deferred/mitigated→affected, investigating→under_investigation)",
+        "Renders the final report with counts for not_affected, fixed, affected (with mitigations), and under_investigation",
+        "Reports Uploaded: no and PR comment: no because --upload was not requested and no PR context was detected"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Generate a CycloneDX VEX attestation from our triage decisions and upload it to Vulnetix so customers can consume it alongside the SBOM.",
+      "expected_output": "A CycloneDX VEX document generated and uploaded via the Vulnetix CLI, with the local path and upload confirmation surfaced in the report.",
+      "expectations": [
+        "Invokes `vulnetix triage --provider vulnetix --vex-format cyclonedx -o json` (CycloneDX schema, not OpenVEX)",
+        "Writes the artifact under .vulnetix/vex/<timestamp>.vex.json",
+        "Calls `vulnetix upload --file .vulnetix/vex/<timestamp>.vex.json` after generation succeeds",
+        "Notes the upload requires authenticated CLI and may rate-limit on community tier",
+        "Final report includes Uploaded: yes and the VEX statement counts grouped by status"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "We're on a CI runner reviewing PR #482 — publish the VEX statements and drop a summary comment on the PR so reviewers see the security disposition.",
+      "expected_output": "VEX file generated locally and a Markdown summary posted as a GitHub PR comment via gh, with the report indicating both the file path and that the PR comment was posted.",
+      "expectations": [
+        "Checks .vulnetix/capabilities.yaml for binaries.gh: true and detects PR context via GITHUB_REF or `gh pr view --json number`",
+        "Generates the VEX via `vulnetix triage --provider vulnetix --vex-format openvex -o json` to .vulnetix/vex/<timestamp>.vex.json",
+        "Produces a Markdown summary file .vulnetix/vex/<timestamp>.vex.summary.md rendered from the VEX JSON",
+        "Posts the summary with `gh pr comment <PR_NUMBER> --body-file .vulnetix/vex/<timestamp>.vex.summary.md`",
+        "Final report shows PR comment: yes and breakdown of statements by VEX status (not_affected/fixed/affected/under_investigation)"
+      ]
+    }
+  ]
+}

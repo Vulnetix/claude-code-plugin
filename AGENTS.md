@@ -180,5 +180,16 @@ graph TD
 - **Hook scripts** are bash, registered in `hooks/hooks.json`, must exit 0 for informational output or non-zero to block
 - **Agent definitions** are markdown files in `agents/` with frontmatter (`name`, `description`, `effort`, `maxTurns`, `allowed-tools`, `model`)
 - **Website** is Hugo (Go templates) at `website/` — every registered feature must have a corresponding doc page under `website/content/docs/`
-- The canonical schema for `.vulnetix/memory.yaml` is defined in `skills/fix/SKILL.md`
+- The canonical schema for `.vulnetix/memory.yaml` is defined in `skills/fix/references/memory-yaml-schema.md`
 - All skills share memory — coordinate writes carefully, especially in the bulk-triage agent
+
+### Skill quality gate
+
+Every skill under `vulnetix/skills/` must have:
+
+1. A `## Use when` body section in `SKILL.md`.
+2. The phrase "Use when" in its frontmatter `description`.
+3. `evals/evals.json` — schema per Anthropic [`schemas.md`](https://github.com/anthropics/skills/blob/main/skills/skill-creator/references/schemas.md); ≥3 evals; each with ≥5 verifiable `expectations` (named CLI calls, output fields, or side-effects — never vague).
+4. `evals/trigger-eval.json` — 10 `should_trigger` + 10 `should_not_trigger` queries, per [Sogl, "Skills Without Evals Are Just Markdown and Hope"](https://dev.to/danielsogl/skills-without-evals-are-just-markdown-and-hope-3a71).
+
+SKILL.md structure is enforced locally by `pre-commit` (see `.pre-commit-config.yaml`) and on PRs by `.github/workflows/skill-validator.yml` — both run [`agent-ecosystem/skill-validator`](https://github.com/agent-ecosystem/skill-validator) with `--strict --allow-dirs=evals`.

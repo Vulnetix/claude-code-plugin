@@ -1,0 +1,27 @@
+{
+  "skill_name": "iac-scan",
+  "should_trigger": [
+    "Run an IaC scan on infra/terraform",
+    "Check our Terraform for open security groups before I apply",
+    "Scan the OpenTofu files for plaintext secrets",
+    "Audit our k8s manifests for misconfiguration",
+    "Review this PR's *.tf files for IAM wildcards",
+    "Are any S3 buckets in this repo publicly readable per the IaC?",
+    "Gate the merge on critical Terraform findings",
+    "Look at ops/main.tf and flag missing encryption",
+    "Tofu scan — what would I miss before deploy?",
+    "CIS baseline check on our Terraform"
+  ],
+  "should_not_trigger": [
+    "Scan our Dockerfile for base-image CVEs (should route to container-scan)",
+    "Run SAST on the source files in this PR (should route to sast-scan)",
+    "Are there any secrets in our git history? (should route to secret-scan)",
+    "Watch our cloud runtime config for drift live (should route to a CSPM, out of scope)",
+    "Apply a fix for CVE-2021-44228 (should route to fix)",
+    "Build a CycloneDX SBOM (should route to sbom-generate)",
+    "List installed deps with KEV listings (should route to kev-watch)",
+    "Help me write a secure auth handler (should route to secure-code-write)",
+    "Show me the IOCs for this active CVE (should route to ioc-pivot)",
+    "Check our license compliance for AGPL deps (should route to license-check)"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "skill_name": "dashboard",
+  "should_trigger": [
+    "Show me everything Pix is tracking in this repo",
+    "Where did we leave triage last week?",
+    "What's the current vuln status across the repo?",
+    "Onboarding this repo — what security decisions already exist?",
+    "Any stale `under_investigation` items I should re-triage?",
+    "Pre-release check: any open high-severity vulns left?",
+    "Give me the security dashboard",
+    "List tracked vulnerabilities and their decisions",
+    "What did we already decide on these CVEs?",
+    "Audit our past triage decisions"
+  ],
+  "should_not_trigger": [
+    "Fetch fresh vuln data for express (should route to vuln)",
+    "Find weaponised CVEs in our ecosystem (should route to exploits-search)",
+    "Apply the fix for CVE-2021-44228 (should route to fix)",
+    "Triage today's SOC pull (should route to soc-triage)",
+    "Run SAST on the diff (should route to sast-scan)",
+    "Scan my Dockerfile (should route to container-scan)",
+    "Build an SBOM (should route to sbom-generate)",
+    "Look up CVE-2024-3094 (should route to vuln)",
+    "Verify my fix landed (should route to verify-fix)",
+    "Detect what scanners I have installed (should route to capabilities-detect)"
+  ]
+}

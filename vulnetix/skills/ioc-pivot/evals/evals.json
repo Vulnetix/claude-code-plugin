@@ -1,0 +1,44 @@
+{
+  "skill_name": "ioc-pivot",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Build me a blocklist of attacker IPs and ASNs for CVE-2023-44487 so I can push to our edge firewall, and export STIX for our Splunk pipeline.",
+      "expected_output": "SOC report with top IPs/ASNs/countries, ATT&CK chain, Shadowserver counts, sightings timeline, and a STIX 2.1 bundle written to .vulnetix/iocs/CVE-2023-44487.stix.json.",
+      "expectations": [
+        "Reads .vulnetix/capabilities.yaml capturing derived.soar and derived.detection_stack",
+        "Runs `vulnetix vdb iocs CVE-2023-44487 -o json` piped through _lib/jq/iocs.jq to capture top IPs/ASNs/country distribution/ATT&CK techniques",
+        "Runs `vulnetix vdb sightings CVE-2023-44487 -o json` piped through sightings.jq to merge first-seen/peak/last-seen by source",
+        "Renders Top IOCs table with top 10 IPs, ASNs, and countries each",
+        "When derived.soar == \"stix\" OR --format stix is given, runs `vulnetix vdb iocs list --cve-id CVE-2023-44487 --format stix > .vulnetix/iocs/CVE-2023-44487.stix.json` (LIST endpoint, not GET)",
+        "Appends event: ioc-pivot to the vuln entry in .vulnetix/memory.yaml with summary stats (peak day, top country, source count)"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I want a geo-distribution view of attacks for CVE-2024-3094 and the ATT&CK technique chain for an executive brief — last 30 days only.",
+      "expected_output": "Per-CVE SOC report with country distribution, ATT&CK techniques listed with counts, sightings timeline (Mermaid gantt/timeline when 5+ events), no STIX unless requested.",
+      "expectations": [
+        "Passes through optional `--since`/`--limit` flags to the iocs call when the user specifies a time window",
+        "Lists ATT&CK techniques with observation counts in a dedicated section",
+        "Renders a Mermaid `gantt` or `timeline` diagram when 5+ timeline events exist",
+        "Notes the Shadowserver/CrowdSec recency caveat — older CVEs may return empty .sightings[] even when actively exploited (post-2024 data only)",
+        "Skips STIX export when derived.soar is unset and `--format stix` was not passed",
+        "Appends event: ioc-pivot to .vulnetix/memory.yaml with peak day, top country, source count"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Cross-reference CVE-2022-22965 sightings with what we have installed — and suggest what to run next.",
+      "expected_output": "SOC report plus tailored follow-up suggestions based on detection_stack, in-the-wild status, and memory.yaml package matches.",
+      "expectations": [
+        "Uses `vdb iocs get CVE-2022-22965 -o /dev/stdout` (not `-o json` which writes to a literal `json` file per edge-case)",
+        "Cross-references .vulnetix/memory.yaml to determine if the affected package is installed in this repo",
+        "Suggests `/vulnetix:detection-rules CVE-2022-22965` when derived.detection_stack is non-empty",
+        "Suggests `/vulnetix:incident-respond CVE-2022-22965` when sightings indicate active in-the-wild activity",
+        "Suggests `/vulnetix:verify-fix CVE-2022-22965` when the package shows installed in memory.yaml after a patch",
+        "Appends event: ioc-pivot to .vulnetix/memory.yaml with summary stats"
+      ]
+    }
+  ]
+}

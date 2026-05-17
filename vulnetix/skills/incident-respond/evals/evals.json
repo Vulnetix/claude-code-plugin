@@ -1,0 +1,44 @@
+{
+  "skill_name": "incident-respond",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "CVE-2024-3094 just went hot overnight — we ship a service that links xz. Give me the full SOC response in one shot.",
+      "expected_output": "Linear playbook: urgency confirmation via sightings/KEV, IOC + ATT&CK pull, detection-rule deployment per installed family, patch evaluation, VEX attestation, and a consolidated incident report with Next steps.",
+      "expectations": [
+        "Reads .vulnetix/capabilities.yaml and .vulnetix/memory.yaml in Step 1, capturing derived.detection_stack and derived.soar",
+        "Runs `vulnetix vdb sightings CVE-2024-3094 -o json` and `vulnetix vdb kev get CVE-2024-3094 -o json` piped through their _lib/jq filters to classify active vs dormant",
+        "Pulls IOCs and ATT&CK chain via `vulnetix vdb iocs` and `vulnetix vdb attack-techniques` piped through respective jq filters, surfacing top 5 IOCs",
+        "Writes detection rules per family in derived.detection_stack to .vulnetix/detection/CVE-2024-3094/ — skips families absent from the stack",
+        "Generates VEX via `vulnetix triage --provider vulnetix --vex-format openvex -o json > .vulnetix/vex/CVE-2024-3094.<timestamp>.vex.json`",
+        "Renders the consolidated incident report with Status / First sighting / KEV / ATT&CK / Top IOCs / Detection rules deployed / Patch available / Repo affected / Decision / VEX path / Next steps, and appends event: incident-respond as a single consolidated memory write"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Vendor advisory just named our dependency in CVE-2025-9999 — coordinate detection, patch and VEX in one go.",
+      "expected_output": "Active classification, detection deployment, patch path with optional inline application, VEX generation, and a single memory write capturing the chain.",
+      "expectations": [
+        "Classifies the CVE as active if it is KEV-listed OR sightings within 30 days OR EPSS > 0.5 — otherwise exits early and recommends `/vulnetix:remediation`",
+        "Runs `vulnetix vdb fixes CVE-2025-9999 -V v2 -o json` and `vulnetix vdb remediation plan CVE-2025-9999 -V v2 -o json` piped through fixes.jq and remediation.jq",
+        "Offers to delegate to `/vulnetix:fix CVE-2025-9999` with user confirmation when a patch exists and the package is in the repo",
+        "Falls back to `vulnetix vdb workarounds CVE-2025-9999 -V v2` when no patch is available",
+        "Writes a single consolidated memory entry with event: incident-respond covering stage outcomes (uses --disable-memory on inner calls)",
+        "Suggests follow-ups in the final report: `/vulnetix:verify-fix <id>` and `/vulnetix:vex-publish --upload`"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "CrowdSec sightings spiked on CVE-2023-44487 in the last 48h — build me a 'what we knew when' timeline for the post-incident review.",
+      "expected_output": "Active-classification timeline with first sighting, peak, sources, ATT&CK mapping, detection rules deployed for installed families, and a VEX artefact under .vulnetix/vex/.",
+      "expectations": [
+        "Uses sightings + KEV intel to declare Status: active and pulls first-sighting / peak / source counts into the rendered report",
+        "Surfaces top IOCs and ATT&CK technique IDs (T-IDs) inline in the report",
+        "Honors --silent on the parallel intel pull batch to suppress retry chatter per edge-case note",
+        "Skips detection-rule writes when derived.detection_stack is empty (no rule files written)",
+        "Generates an OpenVEX artefact even if user has not decided — defaults to under_investigation per edge-case mapping",
+        "Records a single consolidated `event: incident-respond` entry in .vulnetix/memory.yaml capturing stage outcomes"
+      ]
+    }
+  ]
+}

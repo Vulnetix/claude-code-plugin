@@ -1,0 +1,44 @@
+{
+  "skill_name": "iac-scan",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Run an IaC scan over our infra/terraform tree before I `terraform apply` — flag anything that would expose S3 publicly or open a security group to 0.0.0.0/0.",
+      "expected_output": "Severity-grouped finding table by file:line with resource, issue, recommendation, plus a 2-3 line fix snippet for each high-severity finding; summary written under .vulnetix/iac/.",
+      "expectations": [
+        "Reads .vulnetix/capabilities.yaml and verifies derived.has_iac: true (or that --paths was supplied) before scanning",
+        "Runs `vulnetix iac --paths infra/terraform -o json > .vulnetix/iac.<timestamp>.json`",
+        "Renders results as a markdown table with columns: Severity | File:Line | Resource | Issue | Recommendation, grouped by file",
+        "Includes a 2-3 line fix code snippet for every high-severity finding (open SGs, public S3, IAM wildcards)",
+        "If binaries.terraform or binaries.tofu is true, suggests running `terraform plan -no-color | head -200` for context but does NOT execute `terraform apply`",
+        "Writes summary counts to .vulnetix/iac/<timestamp>.summary.yaml"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Audit just these two files for misconfig: `--paths k8s/prod-deployment.yaml ops/main.tf`. I want a compliance-friendly report.",
+      "expected_output": "Static-only misconfig findings for the two explicit paths, no false claim of runtime evaluation, output grouped by file with recommendations.",
+      "expectations": [
+        "Passes the explicit --paths through to `vulnetix iac --paths \"k8s/prod-deployment.yaml ops/main.tf\" -o json` instead of scanning the whole tree",
+        "Detects k8s misconfigurations only on top-level YAML kinds matching common workload types (per edge-cases note)",
+        "Calls out that detection is static — cannot evaluate runtime `var.environment == \"prod\"` interpolation, reports both branches",
+        "Groups findings per file in the rendered markdown table and includes plaintext-secret / missing-tag / unpinned-provider checks where applicable",
+        "Writes `.vulnetix/iac.<timestamp>.json` raw output and `.vulnetix/iac/<timestamp>.summary.yaml` with finding counts",
+        "Does NOT delegate to SAST or container-scan even though source/Dockerfiles may be nearby"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Gate our PR — fail loud if any critical IaC findings exist in the diff (public bucket, IAM wildcard, plaintext secret).",
+      "expected_output": "Critical-severity findings surfaced first with file:line, blocking guidance, and a clear pass/fail verdict suitable for CI gating.",
+      "expectations": [
+        "Aborts early with a clear message if derived.has_iac is false and no --paths is given (no silent empty result)",
+        "Prioritises critical findings (public S3/GCS, IAM wildcard `*`, plaintext secrets, unencrypted state backends, open security groups) at the top of the report",
+        "Each critical row includes a 2-3 line fix snippet (e.g. `acl = \"private\"`, restricted CIDR, KMS-encrypted backend)",
+        "Notes the limitation that pre-existing infra not present in IaC (`terraform import` candidates) is not detected",
+        "Writes raw JSON to `.vulnetix/iac.<timestamp>.json` and summary to `.vulnetix/iac/<timestamp>.summary.yaml`",
+        "Does not auto-run `terraform plan` or `terraform apply` — only suggests `terraform plan -no-color | head -200` for human review"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+name: Validate Skills
+on:
+  pull_request:
+    paths:
+      - "vulnetix/skills/**"
+      - ".pre-commit-config.yaml"
+      - ".github/workflows/skill-validator.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install skill-validator
+        run: brew install agent-ecosystem/tap/skill-validator
+      - name: Validate skills
+        run: |
+          skill-validator check --strict --allow-dirs=evals --emit-annotations vulnetix/skills/
+          skill-validator check --strict --allow-dirs=evals -o markdown vulnetix/skills/ >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,27 @@
+{
+  "skill_name": "detection-rules",
+  "should_trigger": [
+    "Generate Snort rules for CVE-2024-23897",
+    "I need a YARA signature for the new xz-utils backdoor",
+    "Build me a Nuclei template for GHSA-8jrj-525p-826v",
+    "Give me IDS content for CVE-2023-50164 — there's no patch yet",
+    "Pull traffic filters for log4shell so we can block it at the perimeter",
+    "Feed our SOC engineering pipeline with detection rules for this CVE",
+    "Snort + Suricata rules for CVE-2024-3400",
+    "I want active-scan signatures for the spring4shell vuln",
+    "Harden our YARA ruleset against this newly-disclosed malware family",
+    "Detection-only mitigation for CVE-2024-1709 — no patch available"
+  ],
+  "should_not_trigger": [
+    "Run the Nuclei template against staging (should route to exploit-test)",
+    "Apply the patch for CVE-2024-23897 (should route to fix)",
+    "Look up everything we know about CVE-2024-1709 (should route to vuln)",
+    "Confirm our fix actually closed the path (should route to verify-fix)",
+    "Run a SAST scan on the diff (should route to sast-scan)",
+    "Audit dependencies for typosquats (should route to typosquat-check)",
+    "Generate an SBOM (should route to sbom-generate)",
+    "Vet a new dependency before install (should route to dep-add-guard)",
+    "Show me actively exploited CVEs this week (should route to exploits-search)",
+    "Map the ATT&CK techniques for our top CVEs (should route to attack-mapping)"
+  ]
+}

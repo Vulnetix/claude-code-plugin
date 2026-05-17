@@ -1,0 +1,41 @@
+{
+  "skill_name": "sbom-generate",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Generate a CycloneDX SBOM for the repo so we can attach it to today's release.",
+      "expected_output": "A CycloneDX 1.7 SBOM written to a timestamped directory under .vulnetix/sboms/, with component and dependency counts surfaced.",
+      "expectations": [
+        "Creates output directory `.vulnetix/sboms/$(date -u +%Y%m%dT%H%M%SZ)/`",
+        "Runs `vulnetix scan -o json-cyclonedx > $OUT/sbom.cdx.json`",
+        "Produces CycloneDX 1.7 (not 1.4/1.5/1.6) and reports it in the render block",
+        "Surfaces component count and dependency count in the output summary",
+        "Suggests `/vulnetix:compliance-report` or `/vulnetix:vex-publish` as chained follow-ups"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Produce both CycloneDX and SPDX SBOMs, sign them with cosign, and cross-validate against syft.",
+      "expected_output": "Two SBOMs (sbom.cdx.json + sbom.spdx.json) in a timestamped directory, with a cosign signature bundle and a syft cross-validation delta surfaced.",
+      "expectations": [
+        "Generates `sbom.cdx.json` via `vulnetix scan -o json-cyclonedx` AND `sbom.spdx.json` via `vulnetix license -o json-spdx`",
+        "Reads `.vulnetix/capabilities.yaml`; if `binaries.cosign: true`, runs `cosign sign-blob --yes ... --bundle $OUT/sbom.cdx.json.sig.bundle`",
+        "If `binaries.cosign: false`, surfaces an install hint and skips signing rather than failing silently",
+        "If `binaries.syft: true`, runs `syft \"$(pwd)\" -o cyclonedx-json > $OUT/sbom.syft.cdx.json` and reports the component-count delta vs Vulnetix",
+        "Never overwrites a previous SBOM — each invocation creates a new ISO8601-stamped directory"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Build me an SBOM with the VEX block embedded so I can satisfy a customer attestation request.",
+      "expected_output": "A CycloneDX 1.7 SBOM with the VEX block embedded inline (rather than a separate file), output paths surfaced for downstream chaining.",
+      "expectations": [
+        "Passes `--include-vex` so VEX is embedded into the CycloneDX 1.7 SBOM rather than emitted as a separate file",
+        "Writes the output under `.vulnetix/sboms/<ISO8601>/sbom.cdx.json`",
+        "Checks `components.length` before declaring success — warns if the repo has no manifests and the SBOM only contains application metadata",
+        "Renders the final summary block listing CycloneDX path, SPDX path (or skipped), Signature path (or none), and Cross-validation status",
+        "Does NOT confuse `vulnetix scan -o json-cyclonedx` (CycloneDX 1.7) with `vulnetix license -o json-spdx` (SPDX 2.3) — uses each flag for its specific format"
+      ]
+    }
+  ]
+}

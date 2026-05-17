@@ -1,0 +1,44 @@
+{
+  "skill_name": "fix",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "We have CVE-2021-44228 flagged on log4j-core in our pom.xml. Walk me through the remediation and apply it if a clean version bump exists.",
+      "expected_output": "Markdown report with Current/Target versions, version source, Safe Harbour score, applied edit to pom.xml backed by .vulnetix-backup files, dry-run verification, and updated .vulnetix/memory.yaml.",
+      "expectations": [
+        "Calls both `vulnetix vdb fixes CVE-2021-44228 -o json` and `vulnetix vdb fixes CVE-2021-44228 -o json -V v2` piped through _lib/jq/fixes.jq",
+        "Reports current version with explicit Version Source (Manifest/Lockfile/Installed/User-supplied/Context/Unknown) and Safe Harbour confidence as a 0.00–1.00 decimal with tier label",
+        "Creates pom.xml.vulnetix-backup before editing and runs `mvn dependency:resolve -DdryRun` (or equivalent) as the dry-run gate",
+        "Re-scans with `vulnetix scan --file pom.xml -f cdx17` and writes the CycloneDX SBOM to .vulnetix/scans/pom.xml.*.cdx.json",
+        "Updates .vulnetix/memory.yaml: sets status: fixed, decision.choice: fix-applied, appends event: fix-applied to history, updates versions.current and manifests section",
+        "Communicates VEX status in developer-friendly language (Fixed / Vulnerable / Not affected / Investigating) — never raw VEX terminology"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "GHSA-jfh8-c2jp-5v3q upgrade is blocked by a peer-dep that pins the old version. What are my options short of a major bump?",
+      "expected_output": "Markdown comparison of fix categories A0–D with Safe Harbour scores, surfacing inlining viability, distro patches, source-fix commit, overrides/resolutions guidance, and traffic-filter Snort rules if no patch.",
+      "expectations": [
+        "Presents fix options in the documented A0 → A → B → C → D priority order with the Safe Harbour score on every option",
+        "Evaluates the A0 inline-as-first-party-code criteria (open-source license, public source, small surface area <~200 LoC, self-contained) before recommending it",
+        "Surfaces package-manager-specific override mechanisms (npm `overrides`, yarn `resolutions`, pnpm `pnpm.overrides`, Cargo `[patch]`, Maven `<dependencyManagement>`) when version conflicts exist",
+        "When Safe Harbour < 0.35 or no patch is available, runs `vulnetix vdb traffic-filters GHSA-jfh8-c2jp-5v3q -o json` and presents Snort/Suricata rawText rules as interim mitigation",
+        "Recommends `/vulnetix:dep-resolve` for the peer-dep conflict rather than forcing a major bump",
+        "Records the situation in .vulnetix/memory.yaml with history event and current Safe Harbour score"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Apply the fix for CVE-2022-22965 in our Spring Boot service and produce a CycloneDX SBOM after — I need it for the release evidence pack.",
+      "expected_output": "End-to-end fix workflow: backup → manifest edit → dry-run → tests → re-scan SBOM written under .vulnetix/scans/ → memory.yaml updated → GHAS sync (Dependabot/CodeQL/Secret Scanning) when gh is authenticated.",
+      "expectations": [
+        "Runs `gh auth status` and, on success, queries Dependabot alerts, CodeQL alerts (by CWE), and secret-scanning alerts, recording results into .vulnetix/memory.yaml under dependabot/code_scanning/secret_scanning",
+        "Backs up the manifest(s) and lockfile(s) to *.vulnetix-backup before editing and documents the rollback path to the user",
+        "Runs the project's test command (e.g. `mvn test`) after the manifest edit and reports pass/fail explicitly",
+        "Generates a CycloneDX 1.7 SBOM with `vulnetix scan --file <manifest> -f cdx17` written to .vulnetix/scans/<sanitized>.cdx.json (path uses `--` separator for monorepos)",
+        "Writes a per-package summary block with Package / Current Version / Fix Target / Fix Source / Safe Harbour and Version Source transparency line",
+        "Updates manifests section of .vulnetix/memory.yaml (last_scanned, sbom_path, sbom_generated, vuln_count, scan_source: fix)"
+      ]
+    }
+  ]
+}
