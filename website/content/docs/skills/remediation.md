@@ -6,7 +6,7 @@ description: Generate a context-aware remediation plan with registry fixes, dist
 
 The Remediation Planning skill generates a comprehensive, context-aware remediation plan for a vulnerability using the VDB V2 remediation API. It auto-detects your repository's ecosystem, package manager, installed versions, container images, and OS to provide targeted fix guidance.
 
-**How this differs from [`/vulnetix:fix`](fix):** The Fix Intelligence skill fetches V1 fix data and proposes manual manifest edits. This skill uses the V2 `remediation plan` endpoint, which provides **context-aware** guidance (ecosystem, version, OS, container), **CWE remediation strategies**, **CrowdSec live threat intelligence**, **workaround effectiveness scoring**, and **verification commands** per package manager. The remediation plan is broader -- it includes distribution patches, container context, and CWE-specific strategies that the fix skill does not cover.
+**How this differs from [`/vulnetix:fix`](/docs/skills/fix/):** The Fix Intelligence skill fetches V1 fix data and proposes manual manifest edits. This skill uses the V2 `remediation plan` endpoint, which provides **context-aware** guidance (ecosystem, version, OS, container), **CWE remediation strategies**, **CrowdSec live threat intelligence**, **workaround effectiveness scoring**, and **verification commands** per package manager. The remediation plan is broader -- it includes distribution patches, container context, and CWE-specific strategies that the fix skill does not cover.
 
 ## Invocation
 

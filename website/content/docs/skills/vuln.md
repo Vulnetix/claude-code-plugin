@@ -9,7 +9,7 @@ The Vulnerability Lookup skill operates in two modes depending on the argument:
 - **Vuln ID mode** -- retrieves detailed vulnerability intelligence and assesses repository impact
 - **Package mode** -- lists all known vulnerabilities for a package and identifies which ones affect your installed version
 
-This skill **does not modify application code** -- it only updates `.vulnetix/memory.yaml` to track findings. Use [`/vulnetix:fix`](fix) for remediation, [`/vulnetix:exploits`](exploits) for exploit analysis, or [`/vulnetix:remediation`](remediation) for a context-aware remediation plan.
+This skill **does not modify application code** -- it only updates `.vulnetix/memory.yaml` to track findings. Use [`/vulnetix:fix`](/docs/skills/fix/) for remediation, [`/vulnetix:exploits`](/docs/skills/exploits/) for exploit analysis, or [`/vulnetix:remediation`](/docs/skills/remediation/) for a context-aware remediation plan.
 
 ## Invocation
 
