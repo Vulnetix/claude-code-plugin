@@ -1,7 +1,7 @@
 {
   "name": "vulnetix",
-  "version": "1.6.0",
-  "description": "Pix AI Coding Assistant — vulnerability intelligence inside Claude Code, Cursor, Codex, Gemini, Copilot, Amazon Q, and 9 more AI coding tools. 32 skills, 14 hooks, 7 agents, 59 commands covering SOC triage, SecDev shift-left, exploit intel, KEV monitoring, fix application, VEX attestation, IaC/container scanning, secret detection, and compliance bundling. Capability-aware (probes 41 binaries + 30 repo signals), token-frugal (94–99% jq filter compression per VDB call), quiet-by-default (per-session cooldowns).",
+  "version": "1.7.0",
+  "description": "Pix AI Coding Assistant — vulnerability intelligence inside Claude Code, Cursor, Codex, Gemini, Copilot, Amazon Q, and 9 more AI coding tools. 33 skills, 14 hooks, 7 agents, 59 commands covering self-serve onboarding (CLI auto-install + free API-key registration), SOC triage, SecDev shift-left, exploit intel, KEV monitoring, fix application, VEX attestation, IaC/container scanning, secret detection, and compliance bundling. Capability-aware (probes 41 binaries + 30 repo signals), token-frugal (94–99% jq filter compression per VDB call), quiet-by-default (per-session cooldowns).",
   "author": {
     "name": "Vulnetix",
     "url": "https://vulnetix.com"

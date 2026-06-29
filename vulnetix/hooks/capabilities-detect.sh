@@ -194,6 +194,9 @@ DERIVED
 # Emit a brief systemMessage on first detection only
 if [[ "${1:-}" == "--announce" ]]; then
     msg="Vulnetix capabilities detected: pm=${PRIMARY_PM}, containers=${HAS_CONTAINERS}, iac=${HAS_IAC}, detection=$(yaml_list "${DETECTION_STACK[@]}"), auth=${AUTH}"
+    if [[ "${AUTH}" == "unauthenticated" ]]; then
+        msg="${msg}. The VDB works unauthenticated on a shared pool; for a free Community key (higher limits) run /vulnetix:get-api-key — self-serve, no website visit needed."
+    fi
     jq -n --arg m "$msg" '{systemMessage: $m}'
 fi
 
