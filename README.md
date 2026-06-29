@@ -37,6 +37,7 @@ Verify with `/plugins` and `/hooks`.
 
 | Skill | Purpose |
 |-------|---------|
+| `/vulnetix:get-api-key [email]` | Self-serve a free Community API key (registers + stores credentials) |
 | `/vulnetix:package-search <name>` | Search packages and assess risk before adding dependencies |
 | `/vulnetix:exploits <vuln-id>` | Analyze exploit intelligence (PoCs, EPSS, CISA KEV, threat model) |
 | `/vulnetix:fix <vuln-id>` | Get fix intelligence and apply concrete remediation |
@@ -65,17 +66,27 @@ Plus four slash commands for direct VDB CLI access: `vdb-vuln`, `vdb-vulns`, `vd
 
 ## Prerequisites
 
-Install the [Vulnetix CLI](https://docs.cli.vulnetix.com/) and authenticate:
+The plugin self-serves both the CLI install and a free API key — you usually don't need to do anything manually. On first use, the `ensure-vulnetix-cli.sh` hook installs the CLI (brew → scoop → nix → GitHub releases → `go install`), and if you're unauthenticated it offers a free key.
+
+Install the [Vulnetix CLI](https://docs.cli.vulnetix.com/) manually if you prefer:
 
 ```bash
 brew install vulnetix/tap/vulnetix
 ```
 
+### Get a free API key (optional — self-serve)
+
+Authentication is **optional**: the VDB serves unauthenticated callers on a shared rate-limited pool. For higher limits, ask the assistant for a key (`/vulnetix:get-api-key`) or register directly — one unauthenticated request returns working credentials immediately (free **Community** tier, no email confirmation):
+
 ```bash
-vulnetix auth login
+curl -fsS -X POST https://www.vulnetix.com/api/site/v1/register \
+  -H 'Content-Type: application/json' -d '{"email":"you@example.com"}'
+# → { "orgId": "...", "secret": "...", "apiKey": "...", "jwt": "..." }
+
+vulnetix auth login --org-id <orgId> --secret <secret> --store home
 ```
 
-See [CLI Documentation](https://docs.cli.vulnetix.com/) for all installation methods.
+Already have credentials? Run `vulnetix auth login` (or `/vulnetix:auth-login`). See [CLI Documentation](https://docs.cli.vulnetix.com/) for all installation methods.
 
 ## Upgrading
 

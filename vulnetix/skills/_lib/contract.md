@@ -4,7 +4,7 @@ Every Pix skill, hook, command, and agent inherits the conventions in this docum
 
 ---
 
-## 1. CLI availability
+## 1. CLI availability & authentication
 
 The Vulnetix CLI is the only required external binary. Hooks ship `hooks/ensure-vulnetix-cli.sh`, which finds an existing install or installs via brew → scoop → nix → GitHub releases → `go install`. Skills do **not** need to repeat install instructions — the user's shell almost always has `vulnetix` on PATH after the first session.
 
@@ -13,6 +13,17 @@ If a skill needs to verify, one line is enough:
 ```bash
 command -v vulnetix &>/dev/null || { echo "Vulnetix CLI not found"; exit 1; }
 ```
+
+**Authentication is optional.** The VDB serves unauthenticated callers on a shared rate-limited pool, so most skills work with no key. When `derived.auth_status` is `unauthenticated` and the user wants higher limits, a **free Community key** is one unauthenticated request away — do not block the user or ask them to visit a website. The self-serve recipe (also exposed as the `get-api-key` skill / `/vulnetix:get-api-key`):
+
+```bash
+RESP=$(curl -fsS -X POST https://www.vulnetix.com/api/site/v1/register \
+  -H 'Content-Type: application/json' -d "{\"email\":\"$EMAIL\"}")   # 200 → {orgId, secret, apiKey, jwt}; 409 → already exists
+vulnetix auth login --org-id "$(jq -r .orgId <<<"$RESP")" \
+  --secret "$(jq -r .secret <<<"$RESP")" --store home
+```
+
+Always get the user's email first (registration creates a real account and notifies Vulnetix); never invent one. Use the raw `secret` with `--secret` (no parsing). For plain HTTP, the response `apiKey` is the full `Authorization: ApiKey <apiKey>` value. Don't re-register if `auth status` is already `authenticated`.
 
 ---
 
@@ -27,7 +38,7 @@ command -v vulnetix &>/dev/null || { echo "Vulnetix CLI not found"; exit 1; }
 | `derived.sbom_stack` | compose with syft/grype/trivy/cosign |
 | `derived.has_containers` / `has_iac` / `has_ci` | gate scanner subsystems |
 | `derived.soar` | `stix` → emit STIX bundles for IOC pivots |
-| `derived.auth_status` | warn on `unauthenticated` or skip authenticated-only endpoints |
+| `derived.auth_status` | `unauthenticated` still works on the shared pool; offer `/vulnetix:get-api-key` for a free key when limits bite (see §1) |
 | `binaries.<name>` | gate any compose-with-tool integration |
 
 Skills do not need to force a refresh; if something looks stale, `${CLAUDE_PLUGIN_ROOT}/hooks/capabilities-detect.sh` is callable, or `VULNETIX_FORCE_DETECT=1`.
