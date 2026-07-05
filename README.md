@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="pix.svg" alt="Pix, the Vulnetix AI coding assistant" width="160">
+</p>
+
 # Vulnetix AI Coding Agent Plugin
 
 Vulnerability intelligence for AI coding agents — automated dependency scanning, exploit analysis, and remediation powered by the Vulnetix VDB API.
