@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, vulnetix-local]
     steps:
       - uses: actions/checkout@v5
         with:
@@ -48,7 +48,7 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, vulnetix-local]
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
