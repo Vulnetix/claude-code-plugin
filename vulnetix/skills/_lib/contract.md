@@ -14,16 +14,14 @@ If a skill needs to verify, one line is enough:
 command -v vulnetix &>/dev/null || { echo "Vulnetix CLI not found"; exit 1; }
 ```
 
-**Authentication is optional.** The VDB serves unauthenticated callers on a shared rate-limited pool, so most skills work with no key. When `derived.auth_status` is `unauthenticated` and the user wants higher limits, a **free Community key** is one unauthenticated request away — do not block the user or ask them to visit a website. The self-serve recipe (also exposed as the `get-api-key` skill / `/vulnetix:get-api-key`):
+**Authentication is optional.** The VDB serves unauthenticated callers on a shared rate-limited pool, so most skills work with no key. When `derived.auth_status` is `unauthenticated` and the user wants higher limits, a **free Community key** is a browser device login away (also exposed as the `get-api-key` skill / `/vulnetix:get-api-key`):
 
 ```bash
-RESP=$(curl -fsS -X POST https://www.vulnetix.com/api/site/v1/register \
-  -H 'Content-Type: application/json' -d "{\"email\":\"$EMAIL\"}")   # 200 → {orgId, secret, apiKey, jwt}; 409 → already exists
-vulnetix auth login --org-id "$(jq -r .orgId <<<"$RESP")" \
-  --secret "$(jq -r .secret <<<"$RESP")" --store home
+vulnetix auth login --store home
+# prints an approval URL + code, then blocks until the user approves in a browser
 ```
 
-Always get the user's email first (registration creates a real account and notifies Vulnetix); never invent one. Use the raw `secret` with `--secret` (no parsing). For plain HTTP, the response `apiKey` is the full `Authorization: ApiKey <apiKey>` value. Don't re-register if `auth status` is already `authenticated`.
+**This step is interactive and you cannot complete it for the user.** Surface the URL and code verbatim and ask them to approve; the code expires in 5 minutes. Identity lives in the Vulnetix identity provider (password, GitHub, Google, passkeys), so there is no endpoint that mints credentials from an email — do not ask for one, and do not invent one. The CLI stores the credential itself on success; there is no separate store step. Don't start a login if `auth status` is already `authenticated`.
 
 ---
 

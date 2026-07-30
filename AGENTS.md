@@ -32,7 +32,7 @@ graph LR
     end
 
     CLI -->|"GET /v1/vuln/*<br/>GET /v2/vuln/*"| API
-    CLI -->|"POST /v1/auth/login<br/>GET /v1/account"| SITE
+    CLI -->|"POST /v1/cli/device/*<br/>GET /v1/account"| SITE
 
     subgraph "Third Party"
         GH["GitHub API<br/>Dependabot · CodeQL"]
@@ -83,10 +83,10 @@ The vulnerability data backend. Aggregates 12+ sources (CVE.org, NVD, VulnCheck,
 
 Account management backend. The plugin depends on it for:
 
-- **Authentication:** `POST /v1/auth/login` — credentials to JWT + API key exchange
+- **Authentication:** `POST /v1/cli/device/authorize` + `/v1/cli/device/token` — RFC 8628 device grant; the user approves in a browser signed in to the Vulnetix identity provider, and the CLI receives an API key
 - **Account info:** `GET /v1/account` — subscription tier, rate limits
 - **Usage tracking:** `GET /v1/usage` — request counts, audit log
-- **Registration:** `POST /v1/register` — new account creation (Community tier, free)
+- **Sign-up:** browser only, at https://www.vulnetix.com/vdb-register (Community tier, free). There is no unauthenticated endpoint that mints credentials from an email.
 
 **Subscription tiers affecting plugin behavior:**
 | Tier | Requests/Day | Cost |
