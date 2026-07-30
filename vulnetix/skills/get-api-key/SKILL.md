@@ -1,7 +1,7 @@
 ---
 name: get-api-key
-description: 'Self-serve a free Vulnetix VDB API key — install the CLI if missing, then register an email at the public Community endpoint and store the credentials. Use when a user has no API key, hits unauthenticated rate limits, sees auth_status=unauthenticated, or asks to sign up / get a free key. The VDB also works unauthenticated on a shared pool; a free key raises limits.'
-argument-hint: <email (optional — will prompt if omitted)>
+description: 'Self-serve a free Vulnetix VDB API key — install the CLI if missing, then run the browser device login so the user approves a code and the CLI stores the credential. Use when a user has no API key, hits unauthenticated rate limits, sees auth_status=unauthenticated, or asks to sign up / get a free key. Needs the user at a browser. The VDB also works unauthenticated on a shared pool; a free key raises limits.'
+argument-hint: (none — sign-in happens in the browser)
 user-invocable: true
 allowed-tools: Bash
 model: sonnet
@@ -21,7 +21,9 @@ cooldown: per-session
 
 # Get a free Vulnetix API key (self-serve)
 
-The Vulnetix VDB works **unauthenticated** on a shared pool — most lookups need no key. A free **Community** key removes the shared-pool contention and raises your daily limit. Registration is a single unauthenticated request: an email in, credentials out. No email confirmation, no captcha. See `_lib/contract.md`.
+The Vulnetix VDB works **unauthenticated** on a shared pool — most lookups need no key. A free **Community** key removes the shared-pool contention and raises your daily limit. Getting one is a browser device login: the CLI prints a code, the user approves it while signed in to Vulnetix, and the CLI stores the credential. See `_lib/contract.md`.
+
+**This is interactive.** There is no unauthenticated endpoint that mints credentials from an email — identity moved to the Vulnetix identity provider, so a human has to sign in and approve.
 
 ## 1 · Ensure the CLI is present
 
@@ -41,36 +43,46 @@ vulnetix auth status -o json 2>/dev/null | jq -r '.status // "unauthenticated"'
 
 If this is `authenticated`, stop and report — do **not** register again.
 
-## 3 · Get the user's email (consent required)
+## 3 · Tell the user what will happen (consent required)
 
-Registration creates a real Community account tied to an email address and notifies Vulnetix. **Do not invent an email.** Use the email passed as `$ARGUMENTS`, or ask the user for the one they want the account under. Confirm before proceeding.
+This needs a browser: the user signs in to Vulnetix and approves a short code. **You cannot complete this on their behalf.** Say so before starting, so they are at the keyboard.
 
-## 4 · Register
+No email argument is needed — identity is handled by the Vulnetix sign-in page, which supports password, GitHub, Google and passkeys. A user with no account can create one from the same page. `$ARGUMENTS` is ignored.
+
+## 4 · Start the device login
 
 ```bash
-EMAIL="<the email>"
-RESP=$(curl -fsS -X POST https://www.vulnetix.com/api/site/v1/register \
-  -H 'Content-Type: application/json' \
-  -d "{\"email\":\"${EMAIL}\"}")
-echo "$RESP" | jq '{orgId, hasSecret: (.secret != null)}'
+vulnetix auth login --store home
 ```
 
-- **200** → body is `{ orgId, secret, apiKey, jwt }`. Continue.
-- **409** → this email already has an account. Credentials are **not** re-issued here; the user must retrieve their existing key from the dashboard (https://www.vulnetix.com/vdb-console) and run `/vulnetix:auth-login --org-id <id> --secret <secret>`. Stop.
-- **400** → invalid email. Re-prompt.
+It prints an approval URL and a code, then waits:
 
-## 5 · Store the credentials
+```
+Open this URL in a browser:
 
-Use the raw `secret` (SigV4) — it maps directly to `--secret`, no parsing:
+  https://www.vulnetix.com/cli-login-code?user_code=XXXX-YYYY
+
+Verify this code matches the one shown in your browser:
+
+  XXXX-YYYY
+
+Waiting for browser authorization...
+```
+
+**Surface that URL and code to the user verbatim** and ask them to approve. The command blocks until they do, and the code expires after 5 minutes — if it expires, run it again for a fresh one.
+
+The CLI stores the credential itself on success. There is no separate store step and nothing for you to copy.
+
+- **Expired / not approved** → re-run. Do not retry more than twice without asking.
+- **Cannot open a browser at all** → the user can sign in at https://www.vulnetix.com/vdb-console and create an API key from the account page, then `/vulnetix:auth-login`.
+
+## 5 · Confirm
 
 ```bash
-ORG=$(echo "$RESP" | jq -r .orgId)
-SECRET=$(echo "$RESP" | jq -r .secret)
-vulnetix auth login --org-id "$ORG" --secret "$SECRET" --store home
 vulnetix auth status -o json 2>/dev/null | jq -r '.status'
 ```
 
-For raw HTTP (no CLI), the response's `apiKey` is the full header value: `Authorization: ApiKey <apiKey>`.
+Expect `authenticated`. If not, report the failure rather than retrying blindly.
 
 ## 6 · Report
 

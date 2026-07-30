@@ -80,17 +80,16 @@ brew install vulnetix/tap/vulnetix
 
 ### Get a free API key (optional — self-serve)
 
-Authentication is **optional**: the VDB serves unauthenticated callers on a shared rate-limited pool. For higher limits, ask the assistant for a key (`/vulnetix:get-api-key`) or register directly — one unauthenticated request returns working credentials immediately (free **Community** tier, no email confirmation):
+Authentication is **optional**: the VDB serves unauthenticated callers on a shared rate-limited pool. For higher limits, ask the assistant for a key (`/vulnetix:get-api-key`) or sign in directly. The CLI prints a code, you approve it in a browser, and it stores the credential (free **Community** tier):
 
 ```bash
-curl -fsS -X POST https://www.vulnetix.com/api/site/v1/register \
-  -H 'Content-Type: application/json' -d '{"email":"you@example.com"}'
-# → { "orgId": "...", "secret": "...", "apiKey": "...", "jwt": "..." }
-
-vulnetix auth login --org-id <orgId> --secret <secret> --store home
+vulnetix auth login --store home
+# Open this URL in a browser:
+#   https://www.vulnetix.com/cli-login-code?user_code=XXXX-YYYY
+# ...then approve. The CLI stores the key for you.
 ```
 
-Already have credentials? Run `vulnetix auth login` (or `/vulnetix:auth-login`). See [CLI Documentation](https://docs.cli.vulnetix.com/) for all installation methods.
+Sign-in supports password, GitHub, Google and passkeys. No account yet? Create one at [vulnetix.com/vdb-register](https://www.vulnetix.com/vdb-register). See [CLI Documentation](https://docs.cli.vulnetix.com/) for all installation methods.
 
 ## Upgrading
 
