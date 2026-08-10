@@ -1,4 +1,4 @@
-# triage.jq — extract Pix-relevant fields from `vulnetix vdb triage [flags] -o json`.
+# triage.jq: extract Pix-relevant fields from `vulnetix vdb triage [flags] -o json`.
 #
 # **Verification status: PARTIAL.** The `triage` endpoint shape is implementation-
 # dependent (community vs. authenticated). Inferred from cli/cmd/vdb_triage.go and

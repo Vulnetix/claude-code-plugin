@@ -1,4 +1,4 @@
-# remediation.jq — extract Pix-relevant fields from
+# remediation.jq: extract Pix-relevant fields from
 # `vulnetix vdb remediation plan <id> -V v2 -o json`.
 #
 # Verified against: CVE-2021-44228 (467 KB raw → ~28 KB filtered, ~94%).
@@ -15,7 +15,7 @@
 #     `.registryFixes` and `.sourceFixes` all exist, all drive the decision, and
 #     every one of them was dropped.
 #   - each action is {title, description, type, priority, effort, impact,
-#     buildFromSourceRequired, steps[]} — not {action, packages, verifyCommand,
+#     buildFromSourceRequired, steps[]}, not {action, packages, verifyCommand,
 #     verificationSteps, rollback, notes}.
 #
 # Where the 467 KB goes:
@@ -42,7 +42,7 @@
   exploitationSignals: (.exploitationSignals // null),
   kevEntries: (.kevEntries // []),
 
-  # The ranked plan — the answer to "how do I fix it".
+  # The ranked plan, the answer to "how do I fix it".
   actionCount: ((.actions // []) | length),
   actions: ([(.actions // [])[0:25][] | {
     title: (.title // null),

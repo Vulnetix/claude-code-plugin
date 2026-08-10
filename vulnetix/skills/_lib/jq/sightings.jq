@@ -1,4 +1,4 @@
-# sightings.jq — extract Pix-relevant fields from
+# sightings.jq: extract Pix-relevant fields from
 # `vulnetix vdb sightings <id> -o /dev/stdout`.
 #
 # CLI quirk: `vdb sightings -o json` writes to a file LITERALLY named `json`. Use
@@ -9,7 +9,7 @@
 # daily count rows), firstObservation, identifier, lastObservation, state,
 # timestamp, title.
 #
-# Each event: {at, count, lane, source} — daily Shadowserver-style aggregation.
+# Each event: {at, count, lane, source}, a daily Shadowserver-style aggregation.
 # Pix needs the timeline summary, NOT every daily row. Aggregates events by
 # source+lane and surfaces per-source first-seen / last-seen / total-count /
 # peak-day so the LLM gets a chronological story instead of 2K rows.
@@ -36,7 +36,7 @@
     }] | sort_by(-.total)
   ),
 
-  # Recent events (top 20 by date) — surface raw data points for charts.
+  # Recent events (top 20 by date), raw data points for charts.
   recentEvents: ([.events // [] | sort_by(.at) | reverse | .[0:20][] | {
     at: .at,
     source: .source,

@@ -1,4 +1,4 @@
-# packages.jq — extract Pix-relevant fields from `vulnetix vdb packages search <name> -o json`.
+# packages.jq: extract Pix-relevant fields from `vulnetix vdb packages search <name> -o json`.
 #
 # Verified against: `packages search express` (7 KB raw → ~5 KB filtered, ~28% reduction).
 # Top-level keys: capped, ecosystem, hasMore, limit, offset, packages, query,
@@ -14,7 +14,7 @@
 #   - hasProvenance, matchSources, cloudLocators
 #
 # Retains everything except _links (navigation) and oversized version lists
-# (cap at 10 versions per package — caller can `vdb versions` for full list).
+# (cap at 10 versions per package; caller can `vdb versions` for full list).
 
 {
   query: .query,

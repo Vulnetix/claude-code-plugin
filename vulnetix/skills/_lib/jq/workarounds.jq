@@ -1,4 +1,4 @@
-# workarounds.jq — extract Pix-relevant fields from
+# workarounds.jq: extract Pix-relevant fields from
 # `vulnetix vdb workarounds <id> -V v2 -o json`.
 #
 # **Verification status: PARTIAL.** Re-verify on first use; some workaround entries
@@ -6,7 +6,7 @@
 # endpoint, so this filter may need to fall back to extracting from the fixes
 # response.
 #
-# Retains the full text of each workaround — these are the operational
+# Retains the full text of each workaround, because these are the operational
 # instructions the operator must follow exactly; do not truncate.
 
 {

@@ -1,4 +1,4 @@
-# fixes.jq — extract Pix-relevant fields from `vulnetix vdb fixes <id> -o json`.
+# fixes.jq: extract Pix-relevant fields from `vulnetix vdb fixes <id> -o json`.
 #
 # Verified against: CVE-2021-44228 (87 KB raw → ~25 KB filtered, ~71% reduction).
 # Top-level keys: _deprecated, _links, aiAnalysis, cweRemediations, exploitationMaturity,
@@ -8,7 +8,7 @@
 # timeToPatchDays}, vendorComments.
 #
 # Retains: full summary, timeline, exploitationMaturity, kevRequiredAction (no
-# truncation — KEV actions are short enough), aiAnalysis when present, full
+# truncation, since KEV actions are short enough), aiAnalysis when present, full
 # cweRemediations array, and up to 30 entries per fix-type with all their fields.
 
 {

@@ -1,4 +1,4 @@
-# cwe.jq — extract Pix-relevant fields from `vulnetix vdb cwe <id> -V v2 -o json`.
+# cwe.jq: extract Pix-relevant fields from `vulnetix vdb cwe <id> -V v2 -o json`.
 #
 # **Verification status: PARTIAL.** Inferred from MITRE-style CWE response.
 # Retains all mitigations and consequences (these are the canonical defensive

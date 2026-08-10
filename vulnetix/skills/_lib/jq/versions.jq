@@ -1,4 +1,4 @@
-# versions.jq — extract Pix-relevant fields from `vulnetix vdb versions <package> -o json`.
+# versions.jq: extract Pix-relevant fields from `vulnetix vdb versions <package> -o json`.
 #
 # Verified against: `versions express` (8 KB raw → ~7 KB filtered, modest reduction;
 # the response is already lean). Top-level keys: _links, hasMore, limit, offset,

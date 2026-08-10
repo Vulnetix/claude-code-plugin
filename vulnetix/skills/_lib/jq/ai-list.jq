@@ -1,4 +1,4 @@
-# ai-list.jq — generic projection for the four AI list endpoints:
+# ai-list.jq: generic projection for the four AI list endpoints:
 #   `vulnetix vdb ai-discoveries`, `ai-in-wild`, `ai-malware`, `ai-assisted-exploits`.
 #
 # **Verification status: PARTIAL.** Inferred shape `{items[], total, limit, offset,

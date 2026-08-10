@@ -1,9 +1,9 @@
-# vuln.jq — extract Pix-relevant fields from `vulnetix vdb vuln <id> -o json`.
+# vuln.jq: extract Pix-relevant fields from `vulnetix vdb vuln <id> -o json`.
 #
 # Verified against: CVE-2021-44228 (4.0 MB raw → ~80 KB filtered, ~98% reduction).
 # Source struct: vdb-api uses CVE5 record format; response is an ARRAY of container
 # views, one per upstream source / ecosystem. Each container has its own
-# `cna.affected` slice (different ecosystems carry different affected lists —
+# `cna.affected` slice (different ecosystems carry different affected lists,
 # Amazon Linux entries in one, npm/maven log4j-core in another, etc.), but the
 # Vulnetix enrichment under `adp[0].x_*` is the same composite score across
 # containers.
@@ -11,7 +11,7 @@
 # Strategy:
 #   - Take enrichment fields from the first container that carries them.
 #   - AGGREGATE the cna.affected lists across all containers (with optional dedup
-#     by vendor+product+collectionURL+packageName) — this is the canonical
+#     by vendor+product+collectionURL+packageName). This is the canonical
 #     "what's affected" view across ecosystems.
 #   - Aggregate references too (most CVEs share refs across sources, dedup by URL).
 #   - Drops: x_aliases (large cross-reference lists), provenance/timestamp metadata,
@@ -30,7 +30,7 @@
 | ([$arr[] | .containers.cna.affected // []] | flatten) as $all_affected
 | ([$arr[] | .containers.cna.references // []] | flatten | unique_by(.url)) as $all_refs
 | ([$arr[] | .containers.cna.descriptions // []] | flatten | unique_by(.value)) as $all_descs
-# CLI tree-sitter reachability block — present when --reachability is not
+# CLI tree-sitter reachability block, present when --reachability is not
 # `off` and the advisory has v2 tree-sitter queries published. May appear at
 # the top level (wrapped shape) or per-container (inline shape).
 | ((. | if type == "object" then .x_reachability else null end)
@@ -101,7 +101,7 @@
 
     # Canonical reachability inputs. `affectedRoutines` is the deduplicated
     # functions+files list (CVE 5.x programRoutines/programFiles plus the
-    # AI-derived x_affectedFunctions) — the authoritative "what to grep your
+    # AI-derived x_affectedFunctions): the authoritative "what to grep your
     # codebase for" list. `attackPaths` maps tactics → ATT&CK techniques and
     # drives detection-rule selection (Snort / Nuclei / YARA), NOT reachability.
     affectedRoutines: ($enrich.x_affectedRoutines // []),
@@ -109,7 +109,7 @@
 
     # Deterministic tree-sitter reachability output from the CLI (`vulnetix
     # vdb vuln <id> --reachability both|direct|transitive`). When present,
-    # this is authoritative — it is a real AST scan of the local project,
+    # this is authoritative, because it is a real AST scan of the local project,
     # not a heuristic. Fall back to `affectedRoutines` grep only when this
     # block is absent or empty (--reachability=off, no v2 queries, or
     # ecosystem/package unresolved).
@@ -142,7 +142,7 @@
       ranges: (.ranges // [])
     }] | .[0:200]),
 
-    # Top 20 deduped references across all containers — advisory + patch links.
+    # Top 20 deduped references across all containers: advisory + patch links.
     references: ([$all_refs[0:20][] | {
       url: .url,
       name: (.name // ""),

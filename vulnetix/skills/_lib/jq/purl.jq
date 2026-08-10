@@ -1,10 +1,10 @@
-# purl.jq — extract Pix-relevant fields from `vulnetix vdb purl <purl> -o /dev/stdout`.
+# purl.jq: extract Pix-relevant fields from `vulnetix vdb purl <purl> -o /dev/stdout`.
 #
 # **Verification status: PARTIAL.** Live capture against `pkg:npm/lodash@4.17.21`
 # returned 0 bytes within rate-limit budget during planning. Field paths inferred
 # from cli/cmd/vdb_purl_test.go. Re-verify on first use.
 #
-# Likely shape: package metadata + vulnerabilities — a hybrid of the
+# Likely shape: package metadata + vulnerabilities, a hybrid of the
 # `packages search` and `vulns` responses.
 
 {

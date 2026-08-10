@@ -1,4 +1,4 @@
-# vulns.jq — extract Pix-relevant fields from `vulnetix vdb vulns <package> -o json`.
+# vulns.jq: extract Pix-relevant fields from `vulnetix vdb vulns <package> -o json`.
 #
 # Verified against: `GET /v2/express/vulns` (84 KB raw → ~12 KB filtered, ~86%).
 #
@@ -6,7 +6,7 @@
 # PARTIAL" banner and read `.vulnerabilities[]` as an array of per-CVE objects
 # with severity/cvss/epss/fixedVersion fields. That shape does not exist. Run
 # against live data the old filter collapsed an 84 KB response to 83 bytes of
-# nulls — every field it named was absent.
+# nulls, because every field it named was absent.
 #
 # What the endpoint actually returns:
 #   {packageName, resolvedMode, resolvedNames[], total, totalCVEs,
@@ -18,7 +18,7 @@
 # The same advisory ids repeat across nearly every version, so emitting the full
 # cross product is almost entirely duplication. The distinct id set answers "what
 # affects this package"; the per-version breakdown is capped at a sample. Follow
-# up with `vdb vuln <id>` for severity, KEV status and remediation — none of
+# up with `vdb vuln <id>` for severity, KEV status and remediation. None of
 # which this endpoint carries.
 
 {
@@ -31,7 +31,7 @@
   limit: (.limit // null),
   offset: (.offset // null),
 
-  # Distinct advisory ids across the whole page — the authoritative answer.
+  # Distinct advisory ids across the whole page: the authoritative answer.
   cveIds: ([(.versions // [])[].cveIds // []] | flatten | unique | .[0:300]),
 
   # Representative sample; the ids repeat across versions.

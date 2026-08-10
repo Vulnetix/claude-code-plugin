@@ -1,4 +1,4 @@
-# scorecard.jq — extract Pix-relevant fields from
+# scorecard.jq: extract Pix-relevant fields from
 # `vulnetix vdb scorecard <id> -V v2 -o json`.
 #
 # **Verification status: PARTIAL.** Inferred from v2_scorecard handler.

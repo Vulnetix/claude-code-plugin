@@ -1,4 +1,4 @@
-# iocs.jq — extract Pix-relevant fields from `vulnetix vdb iocs get <id> -o /dev/stdout`.
+# iocs.jq: extract Pix-relevant fields from `vulnetix vdb iocs get <id> -o /dev/stdout`.
 #
 # Subcommand quirk: bare `vdb iocs <id>` returns help. Must use `iocs get <id>`.
 # Output-flag quirk: `-o json` writes to file `json`; use `-o /dev/stdout`.
@@ -8,7 +8,7 @@
 # state, timestamp, title, total.
 #
 # Retains: full shadowserver block (count1d/7d/30d/90dAvg + lastObservationDate +
-# topCountries — all metric data), aliases, all sightings (typically capped at
+# topCountries, all metric data), aliases, all sightings (typically capped at
 # ~200 by the API; each has confidence/firstSeen/ip/lastSeen/reputation/source/
 # falsePositivesCount/uuid). For very large sighting lists, the LLM can re-call
 # with --limit and country/asn filters via `vulnetix vdb iocs list`.
