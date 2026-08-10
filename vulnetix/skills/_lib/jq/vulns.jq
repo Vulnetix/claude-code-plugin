@@ -1,37 +1,44 @@
 # vulns.jq — extract Pix-relevant fields from `vulnetix vdb vulns <package> -o json`.
 #
-# **Verification status: PARTIAL.** Live capture against `vulns express` repeatedly
-# rate-limited during planning. Field paths inferred from
-# /home/chris/GitHub/Vulnetix/cli/pkg/vdb/api.go::VulnerabilitiesResponse. Re-verify
-# on first use; if shape differs, update this filter.
+# Verified against: `GET /v2/express/vulns` (84 KB raw → ~12 KB filtered, ~86%).
 #
-# Inferred top-level: {packageName, total, vulnerabilities[], limit, offset, hasMore}.
-# Inferred per-vuln: cveId/id, severity, cvss, epss, fixedVersion, affectedRange,
-# summary, references, datePublished, dateUpdated, kev, exploitationMaturity.
+# CORRECTED 2026-08-10. The previous version carried a "Verification status:
+# PARTIAL" banner and read `.vulnerabilities[]` as an array of per-CVE objects
+# with severity/cvss/epss/fixedVersion fields. That shape does not exist. Run
+# against live data the old filter collapsed an 84 KB response to 83 bytes of
+# nulls — every field it named was absent.
 #
-# Retains all per-vuln fields rather than truncating. Caps the list at 100
-# entries to bound output for packages with hundreds of CVEs (caller can
-# paginate via --limit/--offset).
+# What the endpoint actually returns:
+#   {packageName, resolvedMode, resolvedNames[], total, totalCVEs,
+#    limit, offset, hasMore, versions: [{version, ecosystem, sources[], cveIds[]}]}
+#
+# So this is a version→advisory map, not a vulnerability list. `total` counts
+# VERSIONS (305 for express) while `totalCVEs` counts distinct advisories (40).
+#
+# The same advisory ids repeat across nearly every version, so emitting the full
+# cross product is almost entirely duplication. The distinct id set answers "what
+# affects this package"; the per-version breakdown is capped at a sample. Follow
+# up with `vdb vuln <id>` for severity, KEV status and remediation — none of
+# which this endpoint carries.
 
 {
-  package: (.packageName // .name),
-  total: (.total // ((.vulnerabilities // []) | length)),
+  package: .packageName,
+  resolvedMode: (.resolvedMode // null),
+  resolvedNames: (.resolvedNames // []),
+  totalCVEs: (.totalCVEs // null),
+  totalVersions: (.total // ((.versions // []) | length)),
   hasMore: (.hasMore // false),
   limit: (.limit // null),
   offset: (.offset // null),
-  vulns: ([(.vulnerabilities // [])[0:100][] | {
-    id: (.cveId // .id // .version),
-    aliases: (.aliases // []),
-    severity: (.severity // null),
-    cvss: (.cvss // .cvssScore // null),
-    epss: (.epss // null),
-    kev: (.kev // .inKev // null),
-    exploitationMaturity: (.exploitationMaturity // null),
-    affectedRange: (.affectedRange // .versions // null),
-    fixedVersion: (.fixedVersion // .fixed_version // null),
-    datePublished: (.datePublished // null),
-    dateUpdated: (.dateUpdated // null),
-    summary: (.summary // .description // null),
-    references: ((.references // [])[0:5])
+
+  # Distinct advisory ids across the whole page — the authoritative answer.
+  cveIds: ([(.versions // [])[].cveIds // []] | flatten | unique | .[0:300]),
+
+  # Representative sample; the ids repeat across versions.
+  versions: ([(.versions // [])[0:20][] | {
+    version: (.version // null),
+    ecosystem: (.ecosystem // ""),
+    sources: (.sources // []),
+    cveIds: ((.cveIds // [])[0:25])
   }])
 }
