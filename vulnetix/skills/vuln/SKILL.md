@@ -38,7 +38,7 @@ cooldown: per-session
 
 ## Conventions
 
-This skill follows [`_lib/contract.md`](../_lib/contract.md): the Vulnetix CLI is auto-installed by hooks, `.vulnetix/capabilities.yaml` is always present, every `vulnetix vdb` call is piped through a verified `jq` filter from [`_lib/jq/`](../_lib/jq/), independent calls run in parallel as concurrent Bash tool calls, and trailing follow-ups are limited to one line. See the contract for output style, memory write rules, and cooldowns.
+This skill follows `skills/_lib/contract.md`: the Vulnetix CLI is auto-installed by hooks, `.vulnetix/capabilities.yaml` is always present, every `vulnetix vdb` call is piped through a verified `jq` filter from `skills/_lib/jq/`, independent calls run in parallel as concurrent Bash tool calls, and trailing follow-ups are limited to one line. See the contract for output style, memory write rules, and cooldowns.
 
 
 This skill serves two purposes based on the argument provided:
@@ -48,7 +48,7 @@ This skill serves two purposes based on the argument provided:
 
 **This skill does not modify application code** -- it only updates `.vulnetix/memory.yaml` to track findings. Use `/vulnetix:fix` for remediation, `/vulnetix:exploits` for exploit analysis, or `/vulnetix:remediation` for a context-aware remediation plan.
 
-**CLI install + capabilities** — see [`../_lib/contract.md`](../_lib/contract.md). Skip the install dance; the hooks handle it.
+**CLI install + capabilities** — see `skills/_lib/contract.md`. Skip the install dance; the hooks handle it.
 
 ## Argument Detection
 

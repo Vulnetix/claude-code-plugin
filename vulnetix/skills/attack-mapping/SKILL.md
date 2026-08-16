@@ -35,7 +35,7 @@ cooldown: per-session
 
 ## Conventions
 
-This skill follows [`_lib/contract.md`](../_lib/contract.md): the Vulnetix CLI is auto-installed by hooks, `.vulnetix/capabilities.yaml` is always present, every `vulnetix vdb` call is piped through a verified `jq` filter from [`_lib/jq/`](../_lib/jq/), independent calls run in parallel as concurrent Bash tool calls, and trailing follow-ups are limited to one line. See the contract for output style, memory write rules, and cooldowns.
+This skill follows `skills/_lib/contract.md`: the Vulnetix CLI is auto-installed by hooks, `.vulnetix/capabilities.yaml` is always present, every `vulnetix vdb` call is piped through a verified `jq` filter from `skills/_lib/jq/`, independent calls run in parallel as concurrent Bash tool calls, and trailing follow-ups are limited to one line. See the contract for output style, memory write rules, and cooldowns.
 
 Produces an ATT&CK technique view of repo risk. Run with a single vuln-id for a focused mapping, or `--all-tracked` to roll up every entry in `.vulnetix/memory.yaml`.
 

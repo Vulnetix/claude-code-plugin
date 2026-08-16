@@ -35,7 +35,7 @@ cooldown: per-session
 
 ## Conventions
 
-This skill follows [`_lib/contract.md`](../_lib/contract.md): the Vulnetix CLI is auto-installed by hooks, `.vulnetix/capabilities.yaml` is always present, every `vulnetix vdb` call is piped through a verified `jq` filter from [`_lib/jq/`](../_lib/jq/), independent calls run in parallel as concurrent Bash tool calls, and trailing follow-ups are limited to one line. See the contract for output style, memory write rules, and cooldowns.
+This skill follows `skills/_lib/contract.md`: the Vulnetix CLI is auto-installed by hooks, `.vulnetix/capabilities.yaml` is always present, every `vulnetix vdb` call is piped through a verified `jq` filter from `skills/_lib/jq/`, independent calls run in parallel as concurrent Bash tool calls, and trailing follow-ups are limited to one line. See the contract for output style, memory write rules, and cooldowns.
 
 
 This skill searches for packages across ecosystems and provides a comprehensive security risk assessment before adding them as dependencies.
@@ -164,7 +164,7 @@ When `gh` CLI is available, check for secret scanning alerts relevant to package
 2. If active secrets exist alongside a package that handles credentials, flag: "Active secrets detected in this repo — adding/upgrading this package should include a secret rotation review"
 3. If a prior memory entry has a `secret_scanning` section, surface it in Known History
 
-**CLI install + capabilities** — see [`../_lib/contract.md`](../_lib/contract.md). Skip the install dance; the hooks handle it.
+**CLI install + capabilities** — see `skills/_lib/contract.md`. Skip the install dance; the hooks handle it.
 
 ## Workflow
 
