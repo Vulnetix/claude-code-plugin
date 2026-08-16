@@ -204,7 +204,7 @@ Use **Glob** and **Grep** to assess repo impact:
      | jq -r '.affectedRoutines[] | select(.kind=="function") | .name' \
      | xargs -I{} git grep -nE '\b{}\b' -- 'src/' ':!*test*'
    ```
-   Pair the grep fallback with per-language call-graph / coverage tooling (see the [package-managers appendix](https://vuln.coordinator.com/appendices/package-managers/)). If `.affectedRoutines` is also empty, defer routine-level reachability to `/vulnetix:exploits`.
+   Pair the grep fallback with per-language call-graph / coverage tooling (see the [package-managers appendix](https://0x73746f66.github.io/vuln-coordinator/appendices/package-managers/)). If `.affectedRoutines` is also empty, defer routine-level reachability to `/vulnetix:exploits`.
 
 ### Step L5: Present Structured Summary
 
