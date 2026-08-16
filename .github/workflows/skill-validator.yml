@@ -6,9 +6,15 @@ on:
       - ".pre-commit-config.yaml"
       - ".github/workflows/skill-validator.yml"
 
+concurrency:
+  group: skill-validator-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate:
     runs-on: [self-hosted, Linux, X64, vulnetix-local]
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v5
       - name: Install skill-validator
