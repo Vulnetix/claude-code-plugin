@@ -143,4 +143,4 @@ Apache-2.0 — see [LICENSE](vulnetix/LICENSE) for details.
 - [Status Page](https://status.vulnetix.com)
 
 Report issues at [github.com/Vulnetix/pix-ai-coding-assistant](https://github.com/Vulnetix/pix-ai-coding-assistant).
-<!-- ci-touch: 2026-08-14T04:04:34Z -->
+<!-- ci-touch: 2026-08-24T13:23:20Z -->
