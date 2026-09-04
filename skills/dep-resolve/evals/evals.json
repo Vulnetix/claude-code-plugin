@@ -1,0 +1,41 @@
+{
+  "skill_name": "dep-resolve",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "`fix` told me to bump `glob-parent` to 6.0.2 but `npm install` is failing with a peer-dep conflict from chokidar. Help me resolve it.",
+      "expected_output": "A dep-tree diagnosis plus a ranked resolution (single bump, override, safe-harbour inline, or detection workaround) with a manifest edit awaiting user approval.",
+      "expectations": [
+        "Reads .vulnetix/capabilities.yaml to identify primary_package_manager and selects `npm ls glob-parent` for tree mapping",
+        "Calls `vulnetix vdb versions glob-parent` and `vulnetix vdb fixes glob-parent` piped through versions.jq / fixes.jq",
+        "Proposes resolution in priority order: single bump, then npm `overrides` block, then safe-harbour inline (Type A0), then detection-rules workaround",
+        "Pauses for user approval before writing any manifest/package.json edits",
+        "Appends `event: dep-resolve` with the chosen resolution path to .vulnetix/memory.yaml"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "We have a transitive `tough-cookie` pinned to a vulnerable version through request — I don't want to bump request. What can we do?",
+      "expected_output": "A pnpm/npm/yarn override recommendation pinning tough-cookie at the safe version, with the exact override block to add.",
+      "expectations": [
+        "Runs `pnpm why tough-cookie` or `yarn why tough-cookie` based on detected package manager from capabilities.yaml",
+        "Calls `vulnetix vdb versions tough-cookie` to identify a safe target version",
+        "Generates the correct override syntax for the detected PM (npm `overrides`, pnpm `pnpm.overrides`, or yarn `resolutions`)",
+        "Notes that pip has no clean override and would require requirements.txt pin + --no-deps if pip were detected",
+        "Suggests `verify-fix` after the override lands"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Upstream still hasn't released a patch for the `node-forge` issue. Can we inline-patch it as first-party code?",
+      "expected_output": "A safe-harbour Type A0 inline-as-first-party plan with license-copy reminder, handing off to `fix`.",
+      "expectations": [
+        "Confirms options 1 (single bump) and 2 (override) are exhausted by checking `vulnetix vdb fixes node-forge`",
+        "Recommends option 3 safe-harbour inline (Type A0) and hands off to `fix` for the inline patch",
+        "Warns that inline-as-first-party requires copying the upstream LICENSE file due to license obligations",
+        "Mentions option 4 fallback: `detection-rules <vuln-id>` while waiting for upstream",
+        "Writes `event: dep-resolve` to .vulnetix/memory.yaml noting the inline path chosen"
+      ]
+    }
+  ]
+}

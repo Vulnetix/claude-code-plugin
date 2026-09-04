@@ -31,7 +31,7 @@ Multi-step agent for "upgrade everything safely". Composes capabilities-detect, 
 
 ## Stage 1: Capabilities
 
-Run `${CLAUDE_PLUGIN_ROOT}/hooks/capabilities-detect.sh` (force refresh). Read `.vulnetix/capabilities.yaml`. If `derived.primary_package_manager == unknown`, ask the user which package manager to target.
+Run `vulnetix agent capabilities --force`. Read `.vulnetix/capabilities.yaml`. If `derived.primary_package_manager == unknown`, ask the user which package manager to target.
 
 ## Stage 2: Inventory
 
@@ -46,7 +46,7 @@ Parse the result into a queue: each item is `(package, current, fixed_version_ta
 For each queue item, decide bump strategy:
 - Patch-level fix → safe to bump (low risk)
 - Minor-level → safe with confirmation
-- Major-level → requires user confirmation (call `/vulnetix:safe-version <package>` for the recommended target)
+- Major-level → requires user confirmation (call `dependency-choice <package>` for the recommended target)
 
 Group items by manifest file.
 
@@ -54,11 +54,11 @@ Group items by manifest file.
 
 For each manifest:
 
-1. Run `/vulnetix:fix <vuln-id>` (delegate, capture proposed change).
+1. Run `fix <vuln-id>` (delegate, capture proposed change).
 2. Apply the change.
 3. Run `<package-manager> install` for that ecosystem.
-4. If install fails (peer-dep / transitive conflict), run `/vulnetix:dep-resolve <package>` and retry.
-5. Run `/vulnetix:verify-fix <vuln-id>`.
+4. If install fails (peer-dep / transitive conflict), run `dep-resolve <package>` and retry.
+5. Run `verify-fix <vuln-id>`.
 6. On PASS → update memory, mark queue item done. On FAIL → log and continue (don't block the whole run).
 
 Memory writes are coordinated via `--disable-memory` on inner CLI calls, with a single consolidated write at end of stage.
@@ -79,7 +79,7 @@ Upgrade orchestration complete.
 - Fixes applied: M (P critical, Q high, R medium)
 - Conflicts resolved via dep-resolve: K
 - Remaining critical/high: J
-- Run `/vulnetix:safe-harbor-resolver` for stuck items.
+- Run `dep-resolve` for stuck items.
 ```
 
 ## Guidelines
@@ -92,7 +92,7 @@ Upgrade orchestration complete.
 
 - Per-manifest sequential execution — one PM at a time to avoid concurrent lockfile writes.
 - Major-version bumps require explicit user confirmation; minor/patch can auto-apply if `--auto-apply-patch` is set.
-- On install failure, the agent invokes `/vulnetix:dep-resolve <package>` and retries — up to 3 iterations per item before logging and continuing.
+- On install failure, the agent invokes `dep-resolve <package>` and retries — up to 3 iterations per item before logging and continuing.
 - Verify-fix runs per item with `--exploits weaponized --severity high`; failed verification leaves the entry as `affected` with a history note.
 - Memory write coordination: `--disable-memory` on every inner call, single consolidated write at end with `event: dep-upgrade-orchestrator`.
 - Final report includes a "stuck items" list with `@safe-harbor-resolver` recommendation for each.

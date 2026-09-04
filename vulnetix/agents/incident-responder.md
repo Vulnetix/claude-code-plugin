@@ -27,7 +27,7 @@ cooldown: per-session
 - Coordinating detection deployment + patch + VEX in one workflow.
 - Producing a post-incident timeline of "what we knew when".
 
-Run when a CVE goes hot. Composes `/vulnetix:soc-triage`, `/vulnetix:ioc-pivot`, `/vulnetix:detection-rules`, `/vulnetix:verify-fix`, and `/vulnetix:vex-publish`.
+Run when a CVE goes hot. Composes `repo-impact`, `vulnetix vdb iocs`, `detection-rules`, `verify-fix`, and `vex-publish`.
 
 ## Stage 1: Confirm scope + capabilities
 
@@ -46,7 +46,7 @@ vulnetix vdb remediation plan "$VULN_ID" -V v2 -o json --disable-memory
 
 ## Stage 2: Decide active vs dormant
 
-Active if: KEV-listed OR sightings within 30 days OR EPSS > 0.5. Else dormant — recommend `/vulnetix:remediation` and exit.
+Active if: KEV-listed OR sightings within 30 days OR EPSS > 0.5. Else dormant — recommend `fix` and exit.
 
 ## Stage 3: Containment intel
 
@@ -65,8 +65,8 @@ vulnetix vdb nuclei get "$VULN_ID" --format yaml > .vulnetix/detection/$VULN_ID/
 ## Stage 5: Patch path
 
 If a fix exists AND the package is in this repo:
-- Delegate to `/vulnetix:fix $VULN_ID`
-- Then `/vulnetix:verify-fix $VULN_ID`
+- Delegate to `fix $VULN_ID`
+- Then `verify-fix $VULN_ID`
 
 If no fix:
 - Surface workarounds: `vulnetix vdb workarounds $VULN_ID -V v2 -o json`
@@ -80,7 +80,7 @@ Append decision to memory and generate VEX:
 vulnetix triage --provider vulnetix --vex-format openvex -o json > .vulnetix/vex/${VULN_ID}.${TIMESTAMP}.vex.json
 ```
 
-Optionally upload via `/vulnetix:vex-publish --upload` (ask user).
+Optionally upload via `vex-publish --upload` (ask user).
 
 ## Stage 7: Report
 
@@ -93,7 +93,7 @@ All inner VDB calls use `--disable-memory`. Single consolidated write at the end
 ## Edge cases & gotchas
 
 - Stage 1 hits 6 parallel endpoints — rate-limit retries delay the batch on community auth. Use `--silent` to suppress retry chatter.
-- Active classification = KEV-listed OR sightings within 30d OR EPSS > 0.5. Dormant CVEs bail out with a recommendation to use `/vulnetix:remediation`.
+- Active classification = KEV-listed OR sightings within 30d OR EPSS > 0.5. Dormant CVEs bail out with a recommendation to use `fix`.
 - Detection-rule writes are gated by `derived.detection_stack` — empty stack means no rule files; review capabilities before invoking.
 - V2 endpoint quirks: `vdb workarounds <id> -V v2` and `vdb remediation plan <id> -V v2` carry partial data in some environments.
 - VEX is generated with `under_investigation` as the default status until the user makes a decision. Pass `--final-only` for decided-only output.

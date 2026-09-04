@@ -1,7 +1,7 @@
 {
   "name": "vulnetix",
-  "version": "1.8.0",
-  "description": "Pix AI Coding Assistant — vulnerability intelligence inside Claude Code, Cursor, Codex, Gemini, Copilot, Amazon Q, and 9 more AI coding tools. 33 skills, 14 hooks, 7 agents, 59 commands covering self-serve onboarding (CLI auto-install + browser device login), SOC triage, SecDev shift-left, exploit intel, KEV monitoring, fix application, VEX attestation, IaC/container scanning, secret detection, and compliance bundling. Capability-aware (probes 41 binaries + 30 repo signals), token-frugal (94–99% jq filter compression per VDB call), quiet-by-default (per-session cooldowns).",
+  "version": "2.0.0",
+  "description": "Pix AI Coding Assistant — vulnerability intelligence for coding agents. 18 skills and 3 hooks, all of them local work: is this dependency acceptable, does this CVE reach this repository, is this change safe to commit, apply and verify a fix. Lookups are not skills here — they are the 31 tools on the Vulnetix MCP server and the CLI's own subcommands, so the same question has one answer instead of three. The hooks are one Go binary (`vulnetix agent hook`) rather than shell scripts, so they run on Windows and on every agent, not only the one that sets CLAUDE_PLUGIN_ROOT.",
   "author": {
     "name": "Vulnetix",
     "url": "https://vulnetix.com"

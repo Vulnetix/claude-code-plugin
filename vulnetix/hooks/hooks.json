@@ -1,70 +1,36 @@
 {
+  "_comment": [
+    "Three hooks, one command, no shell scripts.",
+    "",
+    "This file used to be one of fourteen near-identical hooks.<agent>.json variants",
+    "wiring fifteen bash scripts, and the scripts reimplemented in ~2,000 lines of",
+    "shell what the CLI already does in Go: manifest parsing, install-command",
+    "matching, secret detection. `vulnetix agent hook` reads the host's payload on",
+    "stdin and writes the host's response on stdout, so one command serves every",
+    "agent, and it runs on native Windows, which the bash hooks never did.",
+    "",
+    "The other thirteen variants are gone because they are no longer hand-written:",
+    "`vulnetix agent install` detects the agents on a machine and writes each one's",
+    "config in its own dialect. This file remains for Claude Code marketplace",
+    "installs, where the plugin ships its own hooks.",
+    "",
+    "No ${CLAUDE_PLUGIN_ROOT} anywhere. That variable is set only by Claude Code, and",
+    "only for plugin-loaded content, which is why 31 of the 33 skills silently",
+    "returned nothing on every other agent.",
+    "",
+    "PreToolUse carries a matcher because it has a tool to match. SessionStart and",
+    "UserPromptSubmit carry none: they have no tool name, so a matcher there",
+    "registers a hook that can never fire."
+  ],
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "Bash|Edit|Write|MultiEdit",
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/pre-commit-scan.sh",
+            "command": "vulnetix agent hook",
             "timeout": 30
-          },
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/dep-install-gate.sh",
-            "timeout": 20
-          },
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/docker-build-gate.sh",
-            "timeout": 30
-          },
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/terraform-apply-gate.sh",
-            "timeout": 30
-          },
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/git-push-gate.sh",
-            "timeout": 30
-          }
-        ]
-      },
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/manifest-edit-scan.sh",
-            "timeout": 30
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/post-install-scan.sh",
-            "timeout": 120
-          }
-        ]
-      },
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/dockerfile-edit-gate.sh",
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/iac-edit-gate.sh",
-            "timeout": 10
           }
         ]
       }
@@ -74,24 +40,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/capabilities-detect.sh --announce",
-            "timeout": 15
-          },
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/session-summary.sh",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/stop-reminder.sh",
-            "timeout": 10
+            "command": "vulnetix agent hook",
+            "timeout": 30
           }
         ]
       }
@@ -101,13 +51,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/vuln-context-inject.sh",
-            "timeout": 15
-          },
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/prompt-router.sh",
-            "timeout": 10
+            "command": "vulnetix agent hook",
+            "timeout": 30
           }
         ]
       }

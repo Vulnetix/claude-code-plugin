@@ -1,0 +1,41 @@
+{
+  "skill_name": "verify-fix",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I just bumped lodash for GHSA-jf85-cpcp-j695 — confirm the fix actually landed and the exploit is gone.",
+      "expected_output": "Gated `vulnetix scan --evaluate-sca --severity high --exploits weaponized -o json` plus targeted `vdb fixes` + `vdb vuln` recheck, PASS/FAIL verdict block, memory.yaml status flip to fixed with fix-applied decision.",
+      "expectations": [
+        "Reads .vulnetix/capabilities.yaml and .vulnetix/memory.yaml to find the GHSA-jf85-cpcp-j695 entry and capture package, fixed_version, manifest path",
+        "Runs `vulnetix scan --evaluate-sca --severity high --exploits weaponized -o json` and captures the exit code (non-zero means a weaponized high still present)",
+        "Runs `vulnetix vdb fixes GHSA-jf85-cpcp-j695 -o json` and `vulnetix vdb vuln GHSA-jf85-cpcp-j695 -o json` for the targeted recheck",
+        "Renders the verdict block including Pre-fix version, Post-fix version, Affected range, Within affected range now?, Scan gate (high+weaponized) pass/fail, and Other regressions introduced count",
+        "On PASS sets status: fixed and decision.choice: fix-applied (one of the 8 enum values) plus appends `event: fix-verified` to .vulnetix/memory.yaml as a single consolidated write with --disable-memory on inner calls"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Verify CVE-2023-26136 — I edited package.json but maybe forgot to npm install.",
+      "expected_output": "Pre-flight git diff check on manifest, warning about lockfile regeneration, gated scan, targeted recheck showing whether installed version is still in the affected range, FAIL verdict if so with follow-up suggestions.",
+      "expectations": [
+        "Runs `git diff --name-only HEAD~5 -- <manifest_path>` as the pre-flight to confirm the manifest changed recently",
+        "Explicitly warns that if `npm install` was skipped the lockfile still pins the vulnerable version and the scan will report OLD vuln — recommends running it before verify",
+        "Executes the gated `vulnetix scan --evaluate-sca --severity high --exploits weaponized -o json` and the `vdb fixes` + `vdb vuln` targeted recheck for CVE-2023-26136",
+        "Cross-checks that the affected range from the vuln response EXCLUDES the post-fix installed version and renders FAIL if it does not",
+        "On FAIL keeps status: affected, appends `event: fix-verification-failed` with reason to memory.yaml, and suggests `dep-resolve` (transitive constraint) or `@safe-harbor-resolver` (multi-manifest conflict)"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Pre-release gate — make sure every P1/P2 we triaged is actually resolved so I can stamp a clean-scan attestation.",
+      "expected_output": "Iterates memory.yaml P1/P2 entries, runs gated scan plus targeted recheck per CVE, produces PASS/FAIL block per vuln, single consolidated memory update with fix-verified events for PASSes.",
+      "expectations": [
+        "Loads .vulnetix/memory.yaml and selects entries with priority P1 or P2 (or status under_investigation / affected) to verify",
+        "For each selected vuln runs the gated `vulnetix scan --evaluate-sca --severity high --exploits weaponized -o json` plus `vulnetix vdb fixes <id>` and `vulnetix vdb vuln <id>` recheck",
+        "Renders one PASS/FAIL verdict block per CVE with Package, Pre/Post-fix versions, Within affected range now?, Scan gate result, Regressions count",
+        "On all-PASS produces a clean-scan attestation note suitable for the compliance bundle and offers `vex-publish` as the chained follow-up",
+        "Writes a single consolidated memory update at the end (with --disable-memory on inner CLI calls) flipping each PASS to status: fixed / decision.choice: fix-applied and appending event: fix-verified"
+      ]
+    }
+  ]
+}

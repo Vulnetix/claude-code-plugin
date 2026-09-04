@@ -2,7 +2,7 @@ name: Validate Skills
 on:
   pull_request:
     paths:
-      - "vulnetix/skills/**"
+      - "skills/**"
       - ".pre-commit-config.yaml"
       - ".github/workflows/skill-validator.yml"
 
@@ -17,9 +17,23 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v5
+
       - name: Install skill-validator
         run: brew install agent-ecosystem/tap/skill-validator
+
+      # Canonical skills live at skills/ in the repository root — the convention
+      # `gh skill publish` and `npx skills add` both look for. vulnetix/skills,
+      # .claude/skills and .agents/skills are symlinks to it, so validating the
+      # real directory validates every path into it exactly once.
       - name: Validate skills
         run: |
-          skill-validator check --strict --allow-dirs=evals --emit-annotations vulnetix/skills/
-          skill-validator check --strict --allow-dirs=evals -o markdown vulnetix/skills/ >> "$GITHUB_STEP_SUMMARY"
+          skill-validator check --strict --allow-dirs=evals,references --emit-annotations skills/
+          skill-validator check --strict --allow-dirs=evals,references -o markdown skills/ >> "$GITHUB_STEP_SUMMARY"
+
+      # The same spec, checked by the tool that publishes against it. This is
+      # what catches a frontmatter key the validator tolerates and the registry
+      # does not.
+      - name: Check the publishable form
+        run: gh skill publish --dry-run
+        env:
+          GH_TOKEN: ${{ github.token }}

@@ -5,8 +5,8 @@
     {
       "name": "vulnetix",
       "source": "./vulnetix",
-      "description": "Vulnerability intelligence for Claude Code — self-serve CLI install + browser sign-in for a free API key, scans dependencies on commit, searches packages for risk data, analyzes exploits, and proposes fixes via the Vulnetix VDB API.",
-      "version": "1.8.0",
+      "description": "Vulnerability intelligence for coding agents. A dependency guard that stays silent until an install breaks your policy, a change guard that catches a credential before it is committed, and session context that tells the agent what this repository's last scan found. Plus 18 skills for the work that needs the working tree: choosing a dependency, tracing a CVE into this codebase, applying and verifying a fix.",
+      "version": "2.0.0",
       "author": { "name": "Vulnetix" }
     }
   ]

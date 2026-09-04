@@ -52,7 +52,7 @@ wait
 
 ## Stage 3: Per-file dep-add guard
 
-For every newly added direct dependency in the diff (parse manifest with grep/jq), delegate to `/vulnetix:dep-add-guard <package>`. Aggregate verdicts.
+For every newly added direct dependency in the diff (parse manifest with grep/jq), delegate to `dependency-choice <package>`. Aggregate verdicts.
 
 ## Stage 4: Render review
 

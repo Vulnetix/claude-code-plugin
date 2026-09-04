@@ -1,204 +1,204 @@
-# Vulnetix AI Coding Agent Plugin — System Reference
+# Pix — system reference
 
-This is the official Vulnetix plugin for AI coding agents. It extends your coding agent with security skills, hooks, commands, and agents that query the Vulnetix VDB API via the Vulnetix CLI.
+Vulnetix for coding agents: three hooks, eighteen skills, five subagents. This
+document is the architecture; `README.md` is the user-facing front door and
+`skills/_lib/contract.md` is the contract every skill inherits.
 
-## Architecture
+## The shape of it
+
+There are two surfaces and they do different jobs. Confusing them is what
+produced 33 skills, 33 MCP prompts and 31 MCP tools all answering the same 33
+questions.
 
 ```mermaid
 graph TB
-    subgraph "Vulnetix Plugin"
-        direction TB
-        SK[Skills<br/>7 LLM-guided workflows]
-        CMD[Commands<br/>4 deterministic CLI wrappers]
-        HK[Hooks<br/>6 event-driven scripts]
-        AG[Agents<br/>1 autonomous triage agent]
-        MEM[".vulnetix/memory.yaml<br/>Shared vulnerability state"]
+    subgraph agent["Coding agent"]
+        TURN["Agent turn"]
+        CALL["Tool call"]
     end
 
-    subgraph "External Dependencies"
-        CLI["Vulnetix CLI<br/>(../cli)"]
-        API["VDB API<br/>(../vdb-api)"]
-        SITE["VDB Site API<br/>(../vdb-site)"]
-        GH["GitHub Advanced Security<br/>Dependabot · CodeQL · Secrets"]
+    subgraph vulnetix["Vulnetix"]
+        MCP["MCP server<br/>mcp.vulnetix.com<br/>31 tools · data lookups"]
+        CLI["Vulnetix CLI<br/>local scan, manifest edits,<br/>community tier"]
+        SK["18 skills<br/>local procedures"]
+        HK["3 hooks<br/>vulnetix agent hook"]
+        MEM[".vulnetix/memory.yaml<br/>durable decisions"]
     end
 
+    TURN --> MCP
+    TURN --> CLI
+    TURN --> SK
+    CALL --> HK
+    SK --> MCP
+    SK --> CLI
+    HK --> CLI
     SK --> MEM
     HK --> MEM
-    AG --> SK
-
-    SK --> CLI
-    CMD --> CLI
-    HK --> CLI
+    MCP --> API["VDB API"]
     CLI --> API
-    CLI --> SITE
-    SK --> GH
 ```
 
-## Data Flow
+**MCP is the data surface.** Fetch-and-shape verbs, already shaped, with a
+declared output schema. No install. It deliberately has no community tier,
+because a shared anonymous pool would collapse every caller into the quota CLI
+users draw from.
 
-```mermaid
-sequenceDiagram
-    participant U as User / Hook
-    participant S as Skill / Command
-    participant C as Vulnetix CLI
-    participant V as VDB API (v1/v2)
-    participant G as GitHub API
+**The CLI is the local surface**, and the only one that can read a working tree,
+edit a manifest, or run without credentials. It is also the universal fallback.
 
-    U->>S: /vulnetix:vuln CVE-2021-44228
-    S->>S: Read .vulnetix/memory.yaml
-    S->>C: vulnetix vdb vuln CVE-2021-44228 -o json
-    C->>V: GET /v1/vuln/CVE-2021-44228
-    V-->>C: Enriched CVE (CVSS, EPSS, KEV, fixes)
-    C-->>S: JSON response
-    S->>G: gh api dependabot/alerts (if authenticated)
-    G-->>S: Alert state
-    S->>S: Analyze repo impact (Glob/Grep manifests)
-    S->>S: Update .vulnetix/memory.yaml
-    S-->>U: Structured Markdown report
+**A hook is a process, not an agent turn**, so it cannot call MCP tools. Hooks are
+CLI-only, always.
+
+## The resolution ladder
+
+Stated once in `skills/_lib/contract.md` and never restated:
+
+1. `vulnetix_*` MCP tools, if the agent has them.
+2. `vulnetix` on PATH.
+3. Install it: brew → scoop → nix → the install script.
+4. Credentials, in the CLI's own order — env vars, then `.vulnetix/credentials.json`,
+   then the OS keyring, then `.netrc`.
+5. With none of those, built-in Community credentials, and say so.
+
+## Hooks
+
+One binary, three events. `vulnetix agent hook` reads the host's payload on stdin
+and writes the host's response on stdout.
+
+| Hook | Event | Question |
+|---|---|---|
+| `dependency-guard` | `PreToolUse` on Bash, and on Edit/Write to a manifest | Is this dependency acceptable under the repository's Safe Harbour policy? |
+| `change-guard` | `PreToolUse` on `git commit` / `git push` | Does this change carry a credential? |
+| `session-context` | `SessionStart`, `UserPromptSubmit` | What did the last scan find, and does the named CVE reach this repository? |
+
+### The response contract, measured
+
+Probed directly against `claude` 2.1.260 and `codex` 0.153.2 rather than read out
+of docs, because the docs disagreed with themselves.
+
+| Response shape | Claude Code | Codex |
+|---|---|---|
+| `additionalContext`, no `permissionDecision` | model sees it | model sees it |
+| `permissionDecision: "allow"` + `additionalContext` | model sees it | **hook fails** |
+| `permissionDecision: "deny"` + reason | blocked, model sees reason | blocked, model sees reason |
+| `systemMessage` | model never sees it | — |
+| plain stdout | not shown | model never sees it |
+
+So exactly two shapes are portable, and those are the only two emitted:
+
+```jsonc
+// inform, without interrupting
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":"…"}}
+
+// block, with a reason the model can act on
+{"hookSpecificOutput":{"hookEventName":"PreToolUse",
+                       "permissionDecision":"deny","permissionDecisionReason":"…"}}
 ```
 
-## Plugin Registration
+**Never emit `permissionDecision: "allow"`.** Codex fails the hook on it, and
+omitting the field is the honest spelling anyway: the hook is not granting
+permission, it is adding what it knows.
+
+`systemMessage` alone is why the previous implementation did not work. All
+fourteen hooks emitted only that, and it surfaces to the *user*, not into the
+model's context — so the one actor that could fix the vulnerability was never
+told.
+
+### Silence
+
+The dependency guard prints nothing when the repository's policy is satisfied,
+which is nearly always. Measured on the shipped binary: 0 of 33 everyday commands
+produce output; ~19 ms on any call that is not adding a dependency.
+
+It never blocks on an unparseable manifest, an unreachable API, a missing
+credential or a timeout — absence of an answer is not a verdict.
+
+### Matchers
+
+`PreToolUse` carries a tool-name matcher. `SessionStart` and `UserPromptSubmit`
+carry none: they have no tool, so a matcher there registers a hook that can never
+fire, which is worse than not registering it.
+
+### Codex trust
+
+Codex 0.153 added a hook trust gate. An untrusted hook is skipped with no error
+and no output, so writing the config is not the same as the guard running.
+`vulnetix agent install` says so.
+
+## Layout
 
 ```
-vulnetix/
-├── .claude-plugin/
-│   └── plugin.json              # Plugin metadata (name: "vulnetix", v1.2.2)
-├── skills/                      # LLM-guided workflows (SKILL.md per skill)
-│   ├── dashboard/SKILL.md       # /vulnetix:dashboard
-│   ├── exploits/SKILL.md        # /vulnetix:exploits <vuln-id>
-│   ├── exploits-search/SKILL.md # /vulnetix:exploits-search [flags]
-│   ├── fix/SKILL.md             # /vulnetix:fix <vuln-id>
-│   ├── package-search/SKILL.md  # /vulnetix:package-search <name>
-│   ├── remediation/SKILL.md     # /vulnetix:remediation <vuln-id>
-│   └── vuln/SKILL.md            # /vulnetix:vuln <id-or-package>
-├── commands/                    # Deterministic CLI wrappers (no LLM)
-│   ├── vdb-exploits-search.md   # /vulnetix:vdb-exploits-search [flags]
-│   ├── vdb-remediation.md       # /vulnetix:vdb-remediation <vuln-id> [flags]
-│   ├── vdb-vuln.md              # /vulnetix:vdb-vuln <vuln-id>
-│   └── vdb-vulns.md             # /vulnetix:vdb-vulns <package>
-├── hooks/
-│   ├── hooks.json               # Hook registration — Claude Code (5 event types)
-│   ├── hooks.augment.json       # Augment hooks config
-│   ├── hooks.codebuddy.json     # CodeBuddy hooks config
-│   ├── hooks.codex.json         # OpenAI Codex hooks config
-│   ├── hooks.copilot.json       # GitHub Copilot hooks config (camelCase events)
-│   ├── hooks.gemini.json        # Gemini CLI hooks config (PascalCase events)
-│   ├── hooks.amazonq.json       # Amazon Q Developer hooks config
-│   ├── hooks.cortex.json        # Cortex Code hooks config
-│   ├── hooks.iflow.json         # iFlow CLI hooks config
-│   ├── hooks.kiro.json          # Kiro CLI hooks config (canonical tool matchers)
-│   ├── hooks.openhands.json     # OpenHands hooks config (partial)
-│   ├── hooks.qoder.json         # Qoder hooks config
-│   ├── hooks.qwen.json          # Qwen Code hooks config (timeouts in ms)
-│   ├── hooks.windsurf.json      # Windsurf hooks config (snake_case events)
-│   ├── hooks.cursor.json        # Cursor hooks config (Cursor event names)
-│   ├── cline/                   # Cline dispatcher scripts
-│   │   ├── PreToolUse           # Routes to pre-commit/manifest-edit by tool name
-│   │   └── PostToolUse          # Routes to post-install by tool name
-│   ├── ts/                      # TypeScript wrappers (Tier 3 agents)
-│   │   ├── run-hook.ts          # Shared utility — shells out to bash scripts
-│   │   ├── pi-extension.ts      # Pi extension entry point
-│   │   ├── neovate-plugin.ts    # Neovate plugin entry point
-│   │   └── openclaw/            # OpenClaw hook directories (HOOK.md + handler.ts)
-│   ├── pre-commit-scan.sh       # PreToolUse:Bash — scan before git commit
-│   ├── manifest-edit-scan.sh    # PreToolUse:Edit|Write — gate manifest edits
-│   ├── post-install-scan.sh     # PostToolUse:Bash — SBOM after npm/pip/go install
-│   ├── session-summary.sh       # SessionStart — vulnerability status dashboard
-│   ├── stop-reminder.sh         # Stop — remind about unresolved vulns
-│   └── vuln-context-inject.sh   # UserPromptSubmit — inject vuln context
-└── agents/
-    └── bulk-triage.md           # Parallel multi-vuln triage agent
+pix-ai-coding-assistant/
+├── skills/                       # canonical — what `gh skill publish` looks for
+│   ├── _lib/contract.md          # the contract every skill inherits
+│   ├── dependency-choice/        # …and 17 more
+│   └── <skill>/
+│       ├── SKILL.md
+│       └── evals/{evals,trigger-eval}.json
+├── .claude/skills -> ../skills   # Claude Code follows symlinks, dedups by target
+├── .agents/skills -> ../skills   # the interop path Codex, Cursor and Gemini read
+├── vulnetix/                     # the Claude Code plugin
+│   ├── .claude-plugin/plugin.json
+│   ├── skills -> ../skills
+│   ├── agents/                   # 5 subagents
+│   └── hooks/hooks.json          # one config, one command
+└── website/                      # Hugo docs
 ```
 
-## Skills (7)
+One canonical copy, reached three ways. The previous layout had skills only under
+`vulnetix/`, which is why `gh skill install` and `npx skills add` never copied
+`_lib/` — it has no `SKILL.md` — and why 31 of 33 skills silently returned nothing
+on every agent but Claude Code.
 
-| Skill | Command | Model | Purpose |
-|-------|---------|-------|---------|
-| dashboard | `/vulnetix:dashboard` | haiku | View all tracked vulnerabilities and status |
-| exploits | `/vulnetix:exploits <vuln-id>` | sonnet | Exploit intelligence, ATT&CK mapping, CWSS scoring |
-| exploits-search | `/vulnetix:exploits-search [flags]` | sonnet | Discover exploited vulns across ecosystems |
-| fix | `/vulnetix:fix <vuln-id>` | sonnet | Fix intelligence, manifest edits, verification |
-| package-search | `/vulnetix:package-search <name>` | sonnet | Pre-install security risk assessment |
-| remediation | `/vulnetix:remediation <vuln-id>` | sonnet | Context-aware remediation plan with verification |
-| vuln | `/vulnetix:vuln <id-or-package>` | sonnet | Vulnerability lookup or package vuln listing |
+## Frontmatter
 
-## Commands (4)
+The Agent Skills spec fixes the top-level keys to `name`, `description`,
+`license`, `compatibility`, `metadata`, `allowed-tools`. The non-standard keys
+this plugin used — `triggers`, `chain`, `outputBudget`, `cooldown` — move under
+`metadata`, except `triggers`, which is deleted: it was read only by
+`prompt-router.sh`, and that hook no longer exists. A skill is selected by its
+`description`, which is why every description says *when to use it*.
 
-| Command | Invocation | Purpose |
-|---------|-----------|---------|
-| vdb-vuln | `/vulnetix:vdb-vuln <vuln-id>` | Raw vulnerability data lookup |
-| vdb-vulns | `/vulnetix:vdb-vulns <package>` | Raw package vulnerability listing |
-| vdb-exploits-search | `/vulnetix:vdb-exploits-search [flags]` | Raw exploit search results |
-| vdb-remediation | `/vulnetix:vdb-remediation <vuln-id> [flags]` | Raw remediation plan from V2 API |
+`allowed-tools` is space-separated and scoped per skill:
 
-Commands have `disable-model-invocation: true` — they execute CLI commands and display output without LLM interpretation.
-
-## Hooks (6)
-
-| Hook | Event | Matcher | Script | Timeout |
-|------|-------|---------|--------|---------|
-| Pre-Commit Scan | PreToolUse | Bash | `pre-commit-scan.sh` | 30s |
-| Manifest Edit Gate | PreToolUse | Edit\|Write | `manifest-edit-scan.sh` | 30s |
-| Post-Install Scan | PostToolUse | Bash | `post-install-scan.sh` | 120s |
-| Session Summary | SessionStart | — | `session-summary.sh` | 10s |
-| Stop Reminder | Stop | — | `stop-reminder.sh` | 10s |
-| Context Inject | UserPromptSubmit | — | `vuln-context-inject.sh` | 15s |
-
-## Agents (1)
-
-| Agent | Model | Max Turns | Purpose |
-|-------|-------|-----------|---------|
-| bulk-triage | sonnet | 15 | Parallel multi-vulnerability triage with CWSS prioritization |
-
-## Shared State: .vulnetix/memory.yaml
-
-All skills read and write `.vulnetix/memory.yaml` in the repo root. The canonical schema is defined in the fix skill (`skills/fix/SKILL.md`). Key sections:
-
-- **`manifests:`** — tracked manifest files, scan timestamps, SBOM paths
-- **`vulnerabilities:`** — per-vuln entries with status, decision, severity, threat_model, cwss, pocs, dependabot, history
-
-VEX status values: `affected`, `under_investigation`, `fixed`, `not_affected`
-Decision choices: `investigating`, `fix-applied`, `risk-accepted`, `deferred`, `not-applicable`
-
-## Supported Ecosystems
-
-npm, go, cargo, pypi, rubygems, maven, packagist, nuget
-
-## CLI Commands Used
-
-The plugin invokes these Vulnetix CLI commands:
-
-```bash
-vulnetix vdb vuln <id> -o json           # Vulnerability lookup
-vulnetix vdb vulns <package> -o json     # Package vulnerabilities
-vulnetix vdb metrics <id> -o json        # CVSS/EPSS metrics
-vulnetix vdb exploits <id> -o json       # Exploit records
-vulnetix vdb fixes <id> -o json          # Fix intelligence
-vulnetix vdb exploits-search [flags]     # Exploit discovery
-vulnetix vdb remediation <id> [flags]    # V2 remediation plan
-vulnetix env                             # Environment context
-vulnetix auth status                     # Auth check
+```yaml
+allowed-tools: Bash(vulnetix:*) Read Grep Glob        # read-only
+allowed-tools: Bash(vulnetix:*) Read Grep Glob Edit   # edits manifests
 ```
 
-## GitHub Integration
+No skill gets bare `Bash`. No read-only skill gets `Write`.
 
-When `gh` CLI is authenticated, skills query:
-- Dependabot alerts (`gh api repos/{owner}/{repo}/dependabot/alerts`)
-- CodeQL analyses (`gh api repos/{owner}/{repo}/code-scanning/alerts`)
-- Secret scanning (`gh api repos/{owner}/{repo}/secret-scanning/alerts`)
+## Memory
 
-## Not Worth Pursuing
+`.vulnetix/memory.yaml` holds durable decisions: the last scan's counts, and one
+record per finding with severity, KEV membership, status and the fix version.
 
-Evaluated and ruled out — no hooks, skills, or plugin extensibility relevant to this plugin:
+`session-context` reads it at SessionStart to tell the agent what the repository
+already knows, and on `UserPromptSubmit` to answer whether a named CVE is in it.
+So what a skill records is what the next session opens with.
 
-- **Auto-GPT Forge** — framework, not a coding agent
-- **Blackbox AI** — no hooks/skills documentation
-- **bolt.new** — web builder, no extensibility API
-- **Lovable** — web builder, not a coding agent
-- **Mentat** — minimal extensibility, no hooks/skills
-- **NVIDIA OpenShell** — sandbox runtime, not a coding agent
-- **PearAI** — inherits Cline hooks, not standalone
-- **Replit Agent** — cloud IDE, no extensibility API
-- **Supermaven** — autocomplete only, no agent mode
-- **v0** — web builder, no extensibility API
-- **Warp** — terminal AI, MCP only, no hooks/skills
+Mutating skills append a `history` event. Read-only skills write nothing. A skill
+making inner CLI calls passes `--disable-memory` on them and does one consolidated
+write at the end.
+
+## Capabilities
+
+`.vulnetix/capabilities.yaml` records which tools this machine has and which
+project markers this repository has, so a skill can scope itself.
+
+`vulnetix agent capabilities` writes it. It was a shell hook until it moved into
+Go, which is when it started being correct: the old detector tested for the
+`.github/workflows` directory, so a repository with an empty one reported CI it
+did not have, and it reported `auth_status: unauthenticated` for an authenticated
+CLI.
+
+## Verification
+
+`vulnetix-fixture-app` is the shared fixture — a deliberately vulnerable
+multi-ecosystem tree whose `.vulnetix/expected.json` pins finding counts, CVEs,
+KEV membership and the manifest line each package anchors to. The CLI's LSP suite
+and the VS Code suite already read it; the skill evals are its third consumer, so
+a rule change fails one file loudly in three repositories.
+
+Hook conformance is table-driven Go tests over recorded payloads, with no model in
+the loop.
