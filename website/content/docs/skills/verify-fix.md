@@ -95,7 +95,7 @@ Other regressions introduced: <count>  (list top 5 if any)
 ## Edge cases & gotchas
 
 - The gated scan (`scan --exploits weaponized --severity high`) returns exit code 1 on findings — wrap with `|| true` if you want to capture without aborting the surrounding shell.
-- Recheck calls `vdb fixes` and `vdb vuln` — pipe both through the jq filters to avoid 4MB raw payloads in your context.
+- Recheck calls `vdb fixes` and `vdb vuln`, or the `vulnetix_remediation` and `vulnetix_vuln` MCP tools. Both surfaces shape their own output, so a 2 MB advisory record arrives as the 10 KB a decision needs.
 - `decision.choice: fix-applied` is one of 8 closed-enum values — never write arbitrary strings; the dashboard skill renders them under "Unknown".
 - If the manifest was edited but the lockfile not regenerated (`npm install` was skipped), the scan reports the OLD vulnerability even though the manifest looks correct. Always run `<pm> install` before verify.
 - Cross-check: the affected range in the vuln response should EXCLUDE the post-fix version. If both old and new versions are in the range, the bump did not reach a safe version.

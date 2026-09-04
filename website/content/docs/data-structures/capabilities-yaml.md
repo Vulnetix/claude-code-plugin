@@ -4,7 +4,9 @@ weight: 4
 description: Schema for .vulnetix/capabilities.yaml — the file every Pix surface reads to scope which Vulnetix CLI features and external integrations are meaningful for the current system + repo.
 ---
 
-`.vulnetix/capabilities.yaml` is auto-maintained by the [`capabilities-detect`](/docs/hooks/capabilities-detect) hook (SessionStart, 24h TTL). It records which security tools are callable on the system and which signals the repo carries, plus a short `derived` block of facts each skill / hook / command / agent uses to filter its output.
+`.vulnetix/capabilities.yaml` is written by `vulnetix agent capabilities`, refreshed when older than a day. It records which security tools are callable on this system and which signals the repository carries, plus a short `derived` block each skill and hook reads to scope its output — no Snort binary, no Snort output.
+
+Detection was a shell hook until it moved into the CLI, which is also when it started being correct: the old detector tested for the `.github/workflows` **directory**, so a repository with an empty one reported CI it did not have, and it reported `auth_status: unauthenticated` for an authenticated CLI. It now runs on native Windows too.
 
 ## Schema
 
@@ -134,7 +136,7 @@ Result of `vulnetix auth status -o json`: `ok` (authenticated), `unauthenticated
 ## Refresh policy
 
 - Auto-refreshes on session start if older than 24h.
-- Force a refresh manually with the [`/vulnetix:capabilities-detect`](/docs/skills/capabilities-detect) skill or `VULNETIX_FORCE_DETECT=1 bash hooks/capabilities-detect.sh`.
+- Force a refresh with `vulnetix agent capabilities --force`.
 - The PostToolUse manifest-edit hook can also trigger a re-detect when manifests change.
 
 ## Why this exists

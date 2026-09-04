@@ -1,6 +1,6 @@
 ---
 title: "dep-upgrade-orchestrator"
-description: "End-to-end dependency upgrade across all manifests — capabilities-detect, scan for vulnerable deps, plan fixes ranked by patch-vs-major bump risk, apply per-manifest, run package-manager install, verify each fix, loop on conflicts via dep-resolve."
+description: "End-to-end dependency upgrade across all manifests — detect capabilities, scan for vulnerable deps, plan fixes ranked by patch-vs-major bump risk, apply per-manifest, run package-manager install, verify each fix, loop on conflicts via dep-resolve."
 weight: 3
 ---
 
@@ -16,7 +16,7 @@ weight: 3
 - Pre-major-release: upgrade as much as is safe.
 - Replacing N-many manual upgrade attempts with one orchestrated run.
 
-Multi-step agent for "upgrade everything safely". Composes capabilities-detect, scan, fix, verify-fix, dep-resolve, and safe-version into one workflow.
+Multi-step agent for "upgrade everything safely". Composes `vulnetix agent capabilities`, scan, fix, verify-fix, dep-resolve and dependency-choice into one workflow.
 
 ## Stage 1: Capabilities
 
