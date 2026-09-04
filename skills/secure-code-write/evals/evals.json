@@ -8,7 +8,7 @@
       "expectations": [
         "Reads .vulnetix/capabilities.yaml and uses derived.primary_package_manager (or the .ts extension) to fix the language as TypeScript",
         "Runs `vulnetix scan --list-default-rules -o json | jq` filtered by tag `auth` to enumerate the rule digest",
-        "Calls `vulnetix vdb cwe list --keyword auth -V v2 -o json` piped through skills/_lib/jq/cwe.jq for CWE intel",
+        "Calls `vulnetix vdb cwe list --keyword auth -V v2 -o json` for CWE intel",
         "Renders the coach output with a numbered Top rules to honor list including rule-id and CWE-XXX references, plus a Common pitfalls bullet list and PASS / FAIL TypeScript snippets",
         "Offers a follow-up `sast-scan --paths src/auth/reset.ts` once the user finishes writing, and performs no memory.yaml writes"
       ]

@@ -27,8 +27,8 @@ jobs:
       # real directory validates every path into it exactly once.
       - name: Validate skills
         run: |
-          skill-validator check --strict --allow-dirs=evals,references --emit-annotations skills/
-          skill-validator check --strict --allow-dirs=evals,references -o markdown skills/ >> "$GITHUB_STEP_SUMMARY"
+          skill-validator check --strict --allow-extra-frontmatter --allow-dirs=evals,references --emit-annotations skills/
+          skill-validator check --strict --allow-extra-frontmatter --allow-dirs=evals,references -o markdown skills/ >> "$GITHUB_STEP_SUMMARY"
 
       # The same spec, checked by the tool that publishes against it. This is
       # what catches a frontmatter key the validator tolerates and the registry

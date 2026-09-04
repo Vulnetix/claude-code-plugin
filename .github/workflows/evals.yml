@@ -1,0 +1,109 @@
+name: Evals
+
+on:
+  pull_request:
+    paths:
+      - "skills/**"
+      - "scripts/eval*.mjs"
+      - ".github/workflows/evals.yml"
+  push:
+    branches: [main]
+    paths:
+      - "skills/**"
+      - "scripts/eval*.mjs"
+  # The agent-driven layers cost money and minutes, so they are deliberate.
+  workflow_dispatch:
+    inputs:
+      agents:
+        description: "Comma-separated agents to drive (claude, codex). Empty runs corpus checks only."
+        required: false
+        default: ""
+  schedule:
+    # Weekly, so a change in agent behaviour or VDB data surfaces on its own
+    # rather than the next time somebody happens to look.
+    - cron: "17 4 * * 1"
+
+concurrency:
+  group: evals-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  corpus:
+    name: Corpus
+    runs-on: [self-hosted, Linux, X64, vulnetix-local]
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+
+      # The fixture is the shared one in the CLI repo: a deliberately vulnerable
+      # multi-ecosystem tree whose expected.json pins the CVEs, the KEV member
+      # and the manifest line each package anchors to. Ground-truth assertions
+      # are checked against it rather than against a judge, so a hallucinated
+      # CVE fails instead of being talked through.
+      - name: Check out the fixture
+        uses: actions/checkout@v5
+        with:
+          repository: Vulnetix/cli
+          path: .fixture-repo
+          sparse-checkout: testdata/vulnetix-fixture-app
+          token: ${{ secrets.GH_MODULES_PAT || github.token }}
+
+      # No model, no credential, no cost. This is the layer that catches an eval
+      # asserting on behaviour that was removed, or naming a CVE the fixture does
+      # not contain — the drift that made the previous corpus dormant.
+      - name: Validate the corpus
+        env:
+          VULNETIX_FIXTURE: ${{ github.workspace }}/.fixture-repo/testdata/vulnetix-fixture-app
+        run: node scripts/eval.mjs
+
+  agents:
+    name: Agent-driven
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    needs: corpus
+    runs-on: [self-hosted, Linux, X64, vulnetix-local]
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check out the fixture
+        uses: actions/checkout@v5
+        with:
+          repository: Vulnetix/cli
+          path: .fixture-repo
+          sparse-checkout: testdata/vulnetix-fixture-app
+          token: ${{ secrets.GH_MODULES_PAT || github.token }}
+
+      - name: Install the CLI
+        run: curl -fsSL https://cli.vulnetix.com/install.sh | sh
+
+      - name: Wire the agents on this runner
+        run: vulnetix agent install
+
+      # Trigger and ground-truth layers. `--agents` with no value drives every
+      # agent found on the runner; the dispatch input narrows it.
+      - name: Run the evals
+        env:
+          VULNETIX_FIXTURE: ${{ github.workspace }}/.fixture-repo/testdata/vulnetix-fixture-app
+          VULNETIX_API_KEY: ${{ secrets.VULNETIX_API_KEY }}
+          VULNETIX_ORG_ID: ${{ secrets.VULNETIX_ORG_ID }}
+        run: |
+          if [ -n "${{ inputs.agents }}" ]; then
+            node scripts/eval.mjs --agents="${{ inputs.agents }}"
+          else
+            node scripts/eval.mjs --agents
+          fi
+
+      # Same harness, second consumer: the frames the marketing pages animate
+      # come out of the runs that just had to pass their assertions.
+      - name: Record the demos
+        env:
+          VULNETIX_FIXTURE: ${{ github.workspace }}/.fixture-repo/testdata/vulnetix-fixture-app
+        run: node scripts/record-demos.mjs
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: agent-replays
+          path: recordings/
+          if-no-files-found: warn

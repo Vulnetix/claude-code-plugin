@@ -16,10 +16,22 @@ check-docs:
 
 # Validate every skill against the Agent Skills spec.
 validate:
-    skill-validator check --strict --allow-dirs=evals,references skills/
+    skill-validator check --strict --allow-extra-frontmatter --allow-dirs=evals,references skills/
 
-# Everything CI checks, in one go.
-check: validate check-docs
+# Check the eval corpus itself: no model, no credential, no cost.
+evals:
+    node scripts/eval.mjs
+
+# Drive real agents through the corpus. Costs money and minutes.
+evals-full agents="":
+    node scripts/eval.mjs --agents{{ if agents != "" { "=" + agents } else { "" } }}
+
+# Record the marketing replays, from the same runs the evals assert on.
+record-demos agents="":
+    node scripts/record-demos.mjs {{ if agents != "" { "--agents=" + agents } else { "" } }}
+
+# Everything CI checks on a push, in one go.
+check: validate check-docs evals
 
 # Serve the docs locally with live reload.
 docs-serve:

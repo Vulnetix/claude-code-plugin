@@ -15,12 +15,12 @@
     },
     {
       "id": 2,
-      "prompt": "Verify CVE-2023-26136 — I edited package.json but maybe forgot to npm install.",
+      "prompt": "Verify CVE-2018-18074 — I edited requirements.txt but maybe forgot to reinstall.",
       "expected_output": "Pre-flight git diff check on manifest, warning about lockfile regeneration, gated scan, targeted recheck showing whether installed version is still in the affected range, FAIL verdict if so with follow-up suggestions.",
       "expectations": [
         "Runs `git diff --name-only HEAD~5 -- <manifest_path>` as the pre-flight to confirm the manifest changed recently",
-        "Explicitly warns that if `npm install` was skipped the lockfile still pins the vulnerable version and the scan will report OLD vuln — recommends running it before verify",
-        "Executes the gated `vulnetix scan --evaluate-sca --severity high --exploits weaponized -o json` and the `vdb fixes` + `vdb vuln` targeted recheck for CVE-2023-26136",
+        "Explicitly warns that if the reinstall was skipped the lockfile still pins the vulnerable version and the scan will report OLD vuln — recommends running `pip install -r requirements.txt` before verify",
+        "Executes the gated `vulnetix scan --evaluate-sca --severity high --exploits weaponized -o json` and the `vdb fixes` + `vdb vuln` targeted recheck for CVE-2018-18074",
         "Cross-checks that the affected range from the vuln response EXCLUDES the post-fix installed version and renders FAIL if it does not",
         "On FAIL keeps status: affected, appends `event: fix-verification-failed` with reason to memory.yaml, and suggests `dep-resolve` (transitive constraint) or `@safe-harbor-resolver` (multi-manifest conflict)"
       ]

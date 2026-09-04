@@ -6,7 +6,7 @@
       "prompt": "We have CVE-2021-44228 flagged on log4j-core in our pom.xml. Walk me through the remediation and apply it if a clean version bump exists.",
       "expected_output": "Markdown report with Current/Target versions, version source, Safe Harbour score, applied edit to pom.xml backed by .vulnetix-backup files, dry-run verification, and updated .vulnetix/memory.yaml.",
       "expectations": [
-        "Calls both `vulnetix vdb fixes CVE-2021-44228 -o json` and `vulnetix vdb fixes CVE-2021-44228 -o json -V v2` piped through _lib/jq/fixes.jq",
+        "Calls both `vulnetix vdb fixes CVE-2021-44228 -o json` and its v2 form, or the vulnetix_remediation MCP tool",
         "Reports current version with explicit Version Source (Manifest/Lockfile/Installed/User-supplied/Context/Unknown) and Safe Harbour confidence as a 0.00–1.00 decimal with tier label",
         "Creates pom.xml.vulnetix-backup before editing and runs `mvn dependency:resolve -DdryRun` (or equivalent) as the dry-run gate",
         "Re-scans with `vulnetix scan --file pom.xml -f cdx17` and writes the CycloneDX SBOM to .vulnetix/scans/pom.xml.*.cdx.json",
@@ -29,7 +29,7 @@
     },
     {
       "id": 3,
-      "prompt": "Apply the fix for CVE-2022-22965 in our Spring Boot service and produce a CycloneDX SBOM after — I need it for the release evidence pack.",
+      "prompt": "Apply the fix for CVE-2021-45046 in our Java service and produce a CycloneDX SBOM after — I need it for the release evidence pack.",
       "expected_output": "End-to-end fix workflow: backup → manifest edit → dry-run → tests → re-scan SBOM written under .vulnetix/scans/ → memory.yaml updated → GHAS sync (Dependabot/CodeQL/Secret Scanning) when gh is authenticated.",
       "expectations": [
         "Runs `gh auth status` and, on success, queries Dependabot alerts, CodeQL alerts (by CWE), and secret-scanning alerts, recording results into .vulnetix/memory.yaml under dependabot/code_scanning/secret_scanning",

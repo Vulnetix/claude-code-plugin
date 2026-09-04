@@ -19,7 +19,7 @@
       "expected_output": "Single-package mode: `vulnetix vdb packages search react-utill --ecosystem npm` for similarity scores plus an ai-malware lookup, rendered as a one-row ALLOW/WARN/BLOCK verdict with similarity reasoning.",
       "expectations": [
         "Treats $ARGUMENTS=react-utill as single-package mode (does not enumerate lockfile)",
-        "Runs `vulnetix vdb packages search react-utill --ecosystem npm -o json` piped through skills/_lib/jq/packages.jq for similarity hits",
+        "Runs `vulnetix vdb packages search react-utill --ecosystem npm -o json` for similarity hits",
         "Also runs `vulnetix scan --block-malware -o json` and `vulnetix vdb ai-malware list -o json` (filtered by package/ecosystem) in parallel",
         "Renders a one-row verdict table citing the Levenshtein similarity score against react-util plus maintainer-health signals (stars, age) in the Reason column",
         "Appends an `event: typosquat-check` entry with the verdict to memory.yaml and notes false-positive risk for legitimate near-name packages"
