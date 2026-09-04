@@ -5,7 +5,18 @@ on:
     branches: [main]
     paths:
       - "website/**"
+      # The skills, agents and hook table are the source for four of the docs
+      # directories, so a change to them is a change to the site.
+      - "skills/**"
+      - "vulnetix/agents/**"
+      - "scripts/gen-docs.mjs"
       - ".github/workflows/docs.yml"
+  pull_request:
+    paths:
+      - "website/**"
+      - "skills/**"
+      - "vulnetix/agents/**"
+      - "scripts/gen-docs.mjs"
   workflow_dispatch:
 
 permissions:
@@ -25,6 +36,13 @@ jobs:
         with:
           submodules: true
           fetch-depth: 0
+
+      # Fails if the generated pages have drifted from the skills, agents and
+      # hook table they are a projection of. This is the check that did not
+      # exist, which is why _index.md claimed "Six hooks, Six skills, Four
+      # commands, 28 agents" against 14/33/59/41 on disk.
+      - name: Check the generated docs are current
+        run: node scripts/gen-docs.mjs --check
 
       - uses: peaceiris/actions-hugo@v3
         with:

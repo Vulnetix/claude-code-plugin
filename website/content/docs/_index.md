@@ -1,22 +1,44 @@
 ---
 title: Documentation
-description: Complete reference for the Vulnetix AI Coding Agent Plugin — hooks, skills, commands, agents, and data structures.
+description: Pix — Vulnetix for coding agents. Three hooks, eighteen skills, five subagents, and where each of them fits.
 ---
 
-The Vulnetix AI Coding Agent Plugin connects your coding agent to Vulnetix VDB, the most comprehensive open-access vulnerability database available. 160 upstream sources — CVE, GHSA, OSV, vendor advisories, and many more — aggregated, normalised, and enriched with exploit intelligence, malware associations, and safe upgrade paths.
+Pix connects your coding agent to Vulnetix VDB: 160 upstream sources — CVE, GHSA,
+OSV, vendor advisories and more — aggregated, normalised, and enriched with
+exploit intelligence, malware associations and safe upgrade paths.
 
-The plugin scans your dependencies as you code, flags vulnerabilities and malicious packages in real time, and gives your agent the context to recommend fixes that won't introduce new problems. No context-switching, no separate tools, no post-facto scanning.
+Three hooks watch the moments that matter, and eighteen skills cover the work that
+needs your working tree. **Looking a vulnerability up is not in here** — that is
+the [MCP server](https://mcp.vulnetix.com/mcp) and the CLI's own subcommands, so a
+question has one answer rather than three competing descriptions of the same job.
 
-Free to start with a Community API key. Pro ($25/mo) unlocks the full enrichment layer — malware intelligence, safe harbour versioning, AI-generated advisories, and more.
+Free to start on the Community tier. No credential at all still works: reads
+succeed, the rate limit is shared, and your agent is told so in plain words rather
+than shown an error.
 
 {{< cards >}}
-  {{< card link="install" title="Install" icon="download" subtitle="Install for Claude Code, Augment, Windsurf, Roo Code, and 28 more agents." >}}
-  {{< card link="getting-started" title="Getting Started" icon="play" subtitle="Prerequisites, authentication, and verification." >}}
-  {{< card link="hooks" title="Hooks" icon="lightning-bolt" subtitle="Six event-driven hooks that scan automatically during your workflow." >}}
-  {{< card link="skills" title="Skills" icon="academic-cap" subtitle="Six interactive skills for deep vulnerability analysis and remediation." >}}
-  {{< card link="commands" title="Commands" icon="terminal" subtitle="Four deterministic CLI wrappers for raw VDB data access." >}}
-  {{< card link="agents" title="Agents" icon="chip" subtitle="Autonomous multi-vulnerability triage and prioritization." >}}
-  {{< card link="data-structures" title="Data Structures" icon="database" subtitle="Memory files, SBOMs, and PoC caching in the .vulnetix/ directory." >}}
+  {{< card link="install" title="Install" icon="download" subtitle="One command wires up every agent on your machine. Support matrix generated from the installer." >}}
+  {{< card link="getting-started" title="Getting started" icon="play" subtitle="Prerequisites, credentials, and how to check it is working." >}}
+  {{< card link="hooks" title="Hooks" icon="lightning-bolt" subtitle="Three guardrails, one command. Silent when your policy is already satisfied." >}}
+  {{< card link="skills" title="Skills" icon="academic-cap" subtitle="Eighteen local procedures — choosing a dependency, tracing a CVE into this repo, applying a fix." >}}
+  {{< card link="agents" title="Subagents" icon="chip" subtitle="Five multi-step workflows that run with their own context." >}}
+  {{< card link="data-structures" title="Data structures" icon="database" subtitle="What lives in .vulnetix/ — the scan record, capabilities, SBOMs." >}}
   {{< card link="reference" title="Reference" icon="book-open" subtitle="Supported ecosystems, vulnerability identifiers, and integrations." >}}
   {{< card link="troubleshooting" title="Troubleshooting" icon="exclamation-circle" subtitle="Common issues, diagnostics, and fixes." >}}
 {{< /cards >}}
+
+## The shape of it
+
+There are two surfaces and they do different jobs.
+
+**MCP is the data surface** — 31 tools, already shaped, no install, reachable from
+any client that speaks the protocol.
+
+**The CLI is the local surface**, and the only one that can read a working tree,
+edit a manifest, or run with no credentials. A hook is a process rather than an
+agent turn, so hooks are always CLI.
+
+Skills sit on top of both and follow one rule: use the MCP tools if the agent has
+them, the CLI otherwise. That is written down once, in
+[the skill contract](https://github.com/Vulnetix/pix-ai-coding-assistant/blob/main/skills/_lib/contract.md),
+and never restated.
