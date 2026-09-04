@@ -122,7 +122,7 @@ for (const skill of corpus) {
 		// controls. Advisory-scoped skills are exempt: asking
 		// `detection-rules` about the xz backdoor is a fair question about a
 		// CVE that is not, and should not be, in this tree.
-		if (REPO_SCOPED.has(skill.name)) {
+		if (truth && REPO_SCOPED.has(skill.name)) {
 			for (const cve of advisoryIds(`${item.prompt} ${JSON.stringify(item.expectations ?? [])}`)) {
 				if (cve.startsWith("CVE-") && !truth.requiredCves.has(cve)) {
 					fail(id, `names ${cve}, which the fixture does not contain, so this eval cannot pass`);
@@ -149,6 +149,12 @@ const triggerCount = corpus.reduce(
 console.log(
 	`corpus: ${corpus.length} skills, ${evalCount} evals, ${triggerCount} trigger assertions`,
 );
+if (!truth) {
+	console.log(
+		`  ground truth skipped: no fixture at ${FIXTURE}\n` +
+			"  (Vulnetix/vulnetix-fixture-app is private; set VULNETIX_FIXTURE or provide a token)",
+	);
+}
 
 /* ------------------------------------------ layers 2 and 3: drive real agents */
 

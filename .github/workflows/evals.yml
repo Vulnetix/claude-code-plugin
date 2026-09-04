@@ -36,25 +36,35 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      # The fixture is the shared one in the CLI repo: a deliberately vulnerable
-      # multi-ecosystem tree whose expected.json pins the CVEs, the KEV member
-      # and the manifest line each package anchors to. Ground-truth assertions
-      # are checked against it rather than against a judge, so a hallucinated
-      # CVE fails instead of being talked through.
+      # The shared fixture: a deliberately vulnerable multi-ecosystem tree whose
+      # expected.json pins the CVEs, the KEV member and the manifest line each
+      # package anchors to. Ground-truth assertions are checked against it rather
+      # than against a judge, so a hallucinated CVE fails instead of being talked
+      # through.
+      #
+      # Its own repository, not a sparse checkout of the CLI: it is a submodule
+      # there, so checking out that path without submodules gets an empty folder
+      # and every ground-truth assertion silently has nothing to assert against.
+      #
+      # It is private, so this needs a token. continue-on-error because a missing
+      # secret should degrade the run, not fail it — the structural checks are
+      # the valuable per-push gate and need no fixture, and eval.mjs reports what
+      # it skipped.
       - name: Check out the fixture
+        id: fixture
+        continue-on-error: true
         uses: actions/checkout@v5
         with:
-          repository: Vulnetix/cli
+          repository: Vulnetix/vulnetix-fixture-app
           path: .fixture-repo
-          sparse-checkout: testdata/vulnetix-fixture-app
-          token: ${{ secrets.GH_MODULES_PAT || github.token }}
+          token: ${{ secrets.GH_MODULES_PAT }}
 
       # No model, no credential, no cost. This is the layer that catches an eval
       # asserting on behaviour that was removed, or naming a CVE the fixture does
       # not contain — the drift that made the previous corpus dormant.
       - name: Validate the corpus
         env:
-          VULNETIX_FIXTURE: ${{ github.workspace }}/.fixture-repo/testdata/vulnetix-fixture-app
+          VULNETIX_FIXTURE: ${{ github.workspace }}/.fixture-repo
         run: node scripts/eval.mjs
 
   agents:
@@ -67,13 +77,15 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # Not continue-on-error here: the agent-driven layers assert against the
+      # fixture's ground truth, so without it this job would run at full cost
+      # and prove considerably less.
       - name: Check out the fixture
         uses: actions/checkout@v5
         with:
-          repository: Vulnetix/cli
+          repository: Vulnetix/vulnetix-fixture-app
           path: .fixture-repo
-          sparse-checkout: testdata/vulnetix-fixture-app
-          token: ${{ secrets.GH_MODULES_PAT || github.token }}
+          token: ${{ secrets.GH_MODULES_PAT }}
 
       - name: Install the CLI
         run: curl -fsSL https://cli.vulnetix.com/install.sh | sh
@@ -85,7 +97,7 @@ jobs:
       # agent found on the runner; the dispatch input narrows it.
       - name: Run the evals
         env:
-          VULNETIX_FIXTURE: ${{ github.workspace }}/.fixture-repo/testdata/vulnetix-fixture-app
+          VULNETIX_FIXTURE: ${{ github.workspace }}/.fixture-repo
           VULNETIX_API_KEY: ${{ secrets.VULNETIX_API_KEY }}
           VULNETIX_ORG_ID: ${{ secrets.VULNETIX_ORG_ID }}
         run: |
@@ -99,7 +111,7 @@ jobs:
       # come out of the runs that just had to pass their assertions.
       - name: Record the demos
         env:
-          VULNETIX_FIXTURE: ${{ github.workspace }}/.fixture-repo/testdata/vulnetix-fixture-app
+          VULNETIX_FIXTURE: ${{ github.workspace }}/.fixture-repo
         run: node scripts/record-demos.mjs
 
       - uses: actions/upload-artifact@v4
